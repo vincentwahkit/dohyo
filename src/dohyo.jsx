@@ -544,19 +544,42 @@ function RevealHoles(props) {
   );
 }
 
+const BUILD = "20260410-1359";
+
 // ─── DECODE QR ────────────────────────────────────────────────────────────────
 function decodeQRPayload(str) {
   try {
-    var d = JSON.parse(str);
-    if (d.v !== "1") { console.log("DOHYO QR: v mismatch, got:", d.v, "full:", JSON.stringify(d).slice(0,100)); return null; }
+    var clean = str.trim();
+    var parsed = JSON.parse(clean);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (parsed.v !== "1" && parsed.v !== 1) return null;
+    if (!parsed.ho || !parsed.sf || !parsed.p) return null;
     var holes = [];
-    for (var i = 0; i < 36; i+=2) holes.push({ par: d.ho[i], si: d.ho[i+1] });
+    for (var i = 0; i < 36; i+=2) {
+      holes.push({ par: parsed.ho[i], si: parsed.ho[i+1] });
+    }
     var scores = [];
-    for (var h = 0; h < 18; h++) scores.push(d.sf.slice(h*4, h*4+4));
-    var inPlay = Array.from({length:18}, function(_,i){ return !!(d.ip & (1<<i)); });
-    return { courseName:d.c, names:d.p, hcps:d.h, holes:holes, scores:scores,
-             inPlay:inPlay, games:d.g, stakes:d.st, dollars:d.dl, nassau:d.nassau||[], firstNine:d.fn };
-  } catch(e) { console.log("DOHYO QR parse error:", e.message, "raw:", str.slice(0,100)); return null; }
+    for (var h = 0; h < 18; h++) {
+      scores.push(parsed.sf.slice(h*4, h*4+4));
+    }
+    var inPlay = [];
+    for (var j = 0; j < 18; j++) {
+      inPlay.push(!!(parsed.ip & (1<<j)));
+    }
+    return {
+      courseName: parsed.c,
+      names: parsed.p,
+      hcps: parsed.h || [],
+      holes: holes,
+      scores: scores,
+      inPlay: inPlay,
+      games: parsed.g,
+      stakes: parsed.st,
+      dollars: parsed.dl,
+      nassau: parsed.nassau || [],
+      firstNine: parsed.fn || "F"
+    };
+  } catch(e) { return null; }
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
@@ -593,7 +616,21 @@ export default function App() {
   function loadFromQRPayload(payloadStr, sourceLabel) {
     try {
       var d = decodeQRPayload(payloadStr);
-      if (!d) { setScanError("Invalid QR — not a Swimming With Sharks round. Scanned: "+payloadStr.slice(0,40)); return false; }
+      if (!d || typeof d === "string") {
+        var isJson = payloadStr.trim().startsWith("{");
+        if (typeof d === "string") {
+          setScanError("Decode error: "+d);
+        } else if (isJson) {
+          setScanError("QR scan incomplete — hold phone steady and try again");
+        } else {
+          setScanError("Invalid QR — not a Swimming With Sharks round");
+        }
+        return false;
+      }
+      if (!d.names || !d.holes || !d.scores) {
+        setScanError("QR decoded but missing fields: names="+!!d.names+" holes="+!!d.holes+" scores="+!!d.scores);
+        return false;
+      }
       if (!checkIntegrity(d.holes, d.courseName)) return false;
       var newPlayers = d.names.map(function(name, pi) {
         return {
@@ -643,8 +680,10 @@ export default function App() {
       if (window.jsQR) {
         var code = window.jsQR(img.data, img.width, img.height);
         if (code && code.data) {
-          loadFromQRPayload(code.data, "Flight");
-          stopScanner();
+          var ok = loadFromQRPayload(code.data, "Flight");
+          if (ok) { stopScanner(); return; }
+          // decode failed — keep scanning but show error briefly
+          setTimeout(poll, 1000);
           return;
         }
       }
@@ -744,6 +783,7 @@ export default function App() {
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
+            <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
         <button onClick={function(){setIsLight(function(v){return !v;});}} style={{background:"transparent",border:"none",color:"var(--dim)",cursor:"pointer",fontSize:18,width:60}}>{isLight?"🌙":"☀️"}</button>
