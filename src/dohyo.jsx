@@ -671,7 +671,6 @@ export default function App() {
     var input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.capture = "environment";
     input.onchange = function(e) {
       var file = e.target.files && e.target.files[0];
       if (!file) return;
@@ -679,21 +678,15 @@ export default function App() {
       reader.onload = function(ev) {
         var img = new Image();
         img.onload = function() {
-          var canvas = document.createElement("canvas");
-          canvas.width = img.width;
-          canvas.height = img.height;
-          var ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-          var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           if (!window.jsQR) {
             setScanError("Loading QR decoder...");
             var s = document.createElement("script");
             s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
-            s.onload = function(){ decodeImage(imageData); };
+            s.onload = function(){ decodeImage(img); };
             s.onerror = function(){ setScanError("QR decoder unavailable — use manual entry."); };
             document.head.appendChild(s);
           } else {
-            decodeImage(imageData);
+            decodeImage(img);
           }
         };
         img.src = ev.target.result;
@@ -701,13 +694,24 @@ export default function App() {
       reader.readAsDataURL(file);
     };
     input.click();
-    function decodeImage(imageData) {
-      var code = window.jsQR(imageData.data, imageData.width, imageData.height);
-      if (code && code.data) {
-        loadFromQRPayload(code.data, "Flight");
-      } else {
-        setScanError("No QR code found in image — try again");
+    function decodeImage(img) {
+      // Try multiple scales — jsQR works best at moderate resolution
+      var scales = [0.5, 1.0, 0.25];
+      for (var si = 0; si < scales.length; si++) {
+        var scale = scales[si];
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var code = window.jsQR(imageData.data, imageData.width, imageData.height);
+        if (code && code.data) {
+          loadFromQRPayload(code.data, "Flight");
+          return;
+        }
       }
+      setScanError("No QR code found — make sure QR fills the frame and try again");
     }
   }
   function stopScanner() {
@@ -790,7 +794,7 @@ export default function App() {
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-11 00:30</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-11 01:00</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
@@ -813,7 +817,7 @@ export default function App() {
         <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginTop:20,marginBottom:10}}>ADD PLAYER</div>
         <button onClick={startScanner}
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
-          📷 Scan QR Code <span style={{fontSize:11,color:"var(--dim)",fontWeight:"400"}}>— take photo of SWS QR</span>
+          📷 Scan QR Code <span style={{fontSize:11,color:"var(--dim)",fontWeight:"400"}}>— photo or screenshot of SWS QR</span>
         </button>
         <button onClick={function(){setShowManual(function(v){return !v;});}}
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
