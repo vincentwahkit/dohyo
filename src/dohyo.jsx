@@ -678,22 +678,23 @@ export default function App() {
       canvas.height = vh;
       if (canvas.width === 0) { setTimeout(poll, 300); return; }
       ctx.drawImage(videoRef.current, 0, 0, vw, vh);
-      var img = ctx.getImageData(0, 0, vw, vh);
-      if (window.jsQR) {
-        var code = window.jsQR(img.data, img.width, img.height);
-        if (code && code.data) {
-          var ok = loadFromQRPayload(code.data, "Flight");
-          if (ok) { stopScanner(); return; }
-          // decode failed — keep scanning but show error briefly
-          setTimeout(poll, 1000);
-          return;
-        }
+      if (window.ZXing) {
+        try {
+          var reader = new window.ZXing.BrowserQRCodeReader();
+          var result = reader.decodeFromCanvas(canvas);
+          if (result && result.getText()) {
+            var ok = loadFromQRPayload(result.getText(), "Flight");
+            if (ok) { stopScanner(); return; }
+            setTimeout(poll, 1000);
+            return;
+          }
+        } catch(e) { /* no QR found yet, keep polling */ }
       }
       setTimeout(poll, 500);
     }
-    if (!window.jsQR) {
+    if (!window.ZXing) {
       var s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+      s.src = "https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js";
       s.onload = function(){ setTimeout(poll, 500); };
       s.onerror = function(){ setScanError("QR scanner unavailable — use manual entry."); stopScanner(); };
       document.head.appendChild(s);
@@ -785,7 +786,7 @@ export default function App() {
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 22:30</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 23:00</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
