@@ -551,9 +551,11 @@ function decodeQRPayload(str) {
   try {
     var clean = str.trim();
     var parsed = JSON.parse(clean);
-    if (!parsed || typeof parsed !== "object") return null;
-    if (parsed.v !== "1" && parsed.v !== 1) return null;
-    if (!parsed.ho || !parsed.sf || !parsed.p) return null;
+    if (!parsed || typeof parsed !== "object") return "not-object";
+    if (parsed.v !== "1" && parsed.v !== 1) return "bad-v:"+parsed.v;
+    if (!parsed.ho) return "no-ho";
+    if (!parsed.sf) return "no-sf";
+    if (!parsed.p) return "no-p";
     var holes = [];
     for (var i = 0; i < 36; i+=2) {
       holes.push({ par: parsed.ho[i], si: parsed.ho[i+1] });
@@ -579,7 +581,7 @@ function decodeQRPayload(str) {
       nassau: parsed.nassau || [],
       firstNine: parsed.fn || "F"
     };
-  } catch(e) { return null; }
+  } catch(e) { return "err:"+e.message.slice(0,40); }
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
@@ -616,15 +618,13 @@ export default function App() {
   function loadFromQRPayload(payloadStr, sourceLabel) {
     try {
       var d = decodeQRPayload(payloadStr);
-      if (!d || typeof d === "string") {
+      if (typeof d === "string") {
+        setScanError("Decode error: "+d+" ("+payloadStr.length+" chars)");
+        return false;
+      }
+      if (!d) {
         var isJson = payloadStr.trim().startsWith("{");
-        if (typeof d === "string") {
-          setScanError("Decode error: "+d);
-        } else if (isJson) {
-          setScanError("QR scan incomplete ("+payloadStr.length+" chars) — try pasting below");
-        } else {
-          setScanError("Invalid QR — not a Swimming With Sharks round");
-        }
+        setScanError(isJson ? "QR scan incomplete ("+payloadStr.length+" chars) — try pasting below" : "Invalid QR — not a Swimming With Sharks round");
         return false;
       }
       if (!d.names || !d.holes || !d.scores) {
@@ -785,7 +785,7 @@ export default function App() {
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 21:00</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 22:30</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
