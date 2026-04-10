@@ -679,8 +679,9 @@ export default function App() {
   function startPoll() {
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext("2d");
+    var polling = true;
     function poll() {
-      if (!videoRef.current || !scannerRef.current) return;
+      if (!polling || !videoRef.current || !scannerRef.current) return;
       var vw = videoRef.current.videoWidth;
       var vh = videoRef.current.videoHeight;
       canvas.width = vw;
@@ -689,25 +690,39 @@ export default function App() {
       ctx.drawImage(videoRef.current, 0, 0, vw, vh);
       if (window.ZXing) {
         try {
-          var reader = new window.ZXing.BrowserQRCodeReader();
-          var result = reader.decodeFromCanvas(canvas);
-          if (result && result.getText()) {
-            var ok = loadFromQRPayload(result.getText(), "Flight");
-            if (ok) { stopScanner(); return; }
-            setTimeout(poll, 1000);
-            return;
-          }
-        } catch(e) { /* no QR found yet, keep polling */ }
+          var hints = new Map();
+          hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+          var reader = new window.ZXing.BrowserQRCodeReader(hints);
+          reader.decodeFromCanvas(canvas).then(function(result) {
+            if (result && result.getText()) {
+              var ok = loadFromQRPayload(result.getText(), "Flight");
+              if (ok) { polling = false; stopScanner(); return; }
+            }
+            if (polling) setTimeout(poll, 500);
+          }).catch(function() {
+            if (polling) setTimeout(poll, 500);
+          });
+          return;
+        } catch(e) { /* ZXing not ready */ }
       }
       setTimeout(poll, 500);
     }
     if (!window.ZXing) {
+      setScanError("Loading scanner...");
       var s = document.createElement("script");
       s.src = "https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js";
-      s.onload = function(){ setTimeout(poll, 500); };
-      s.onerror = function(){ setScanError("QR scanner unavailable — use manual entry."); stopScanner(); };
+      s.onload = function(){
+        setScanError(null);
+        setTimeout(poll, 300);
+      };
+      s.onerror = function(){
+        setScanError("QR scanner unavailable — use manual entry.");
+        stopScanner();
+      };
       document.head.appendChild(s);
-    } else { setTimeout(poll, 300); }
+    } else {
+      setTimeout(poll, 300);
+    }
   }
   function computeFirstNine(m) {
     var p1=players[m.p1], p2=players[m.p2];
@@ -795,7 +810,7 @@ export default function App() {
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 23:00</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 23:30</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
