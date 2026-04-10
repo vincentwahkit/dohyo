@@ -621,7 +621,7 @@ export default function App() {
         if (typeof d === "string") {
           setScanError("Decode error: "+d);
         } else if (isJson) {
-          setScanError("QR scan incomplete — hold phone steady and try again");
+          setScanError("QR scan incomplete ("+payloadStr.length+" chars) — try pasting below");
         } else {
           setScanError("Invalid QR — not a Swimming With Sharks round");
         }
@@ -783,6 +783,7 @@ export default function App() {
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 21:00</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
@@ -844,7 +845,23 @@ export default function App() {
             <button onClick={addManualPlayer} disabled={!manualName.trim()} style={ext(S.btn,{opacity:manualName.trim()?1:0.4})}>Add Player</button>
           </div>
         )}
-        {scanError && !showScanner && <div style={{background:"var(--card)",border:"1px solid var(--neg)",borderRadius:8,padding:"10px 14px",color:"var(--neg)",fontSize:13,marginTop:10}}>{scanError}</div>}
+        {scanError && !showScanner && (
+          <div style={{background:"var(--card)",border:"1px solid var(--neg)",borderRadius:8,padding:"10px 14px",color:"var(--neg)",fontSize:13,marginTop:10}}>
+            {scanError}
+            <div style={{marginTop:8}}>
+              <div style={{fontSize:11,color:"var(--muted)",marginBottom:4}}>Paste QR payload manually:</div>
+              <textarea id="qr-paste-input" rows={3}
+                style={{width:"100%",background:"var(--input)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text)",fontSize:11,padding:6,boxSizing:"border-box",fontFamily:"monospace"}}
+                placeholder='{"v":"1","c":"..."}'/>
+              <button onClick={function(){
+                var val = document.getElementById("qr-paste-input").value;
+                if (val) loadFromQRPayload(val.trim(), "Flight");
+              }} style={{marginTop:6,padding:"8px 16px",background:"var(--accent)",color:"#000",border:"none",borderRadius:6,cursor:"pointer",fontSize:13,fontWeight:"700"}}>
+                Try Paste
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       {players.length>=2 && (
         <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"12px 16px 16px",background:isLight?"linear-gradient(0deg,#fff 70%,transparent)":"linear-gradient(0deg,#0a1a0a 70%,transparent)"}}>
