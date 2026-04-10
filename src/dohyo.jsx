@@ -666,49 +666,55 @@ export default function App() {
     setManualName(""); setManualScores(Array(18).fill("")); setShowManual(false);
   }
   async function startScanner() {
-    setScanError(null); setShowScanner(true);
-    try {
-      var stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} } });
-      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); scannerRef.current = stream; startPoll(); }
-    } catch(e) { setScanError("Camera access denied — use manual entry instead."); setShowScanner(false); }
+    setScanError(null);
+    // Trigger native camera via file input
+    var input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment";
+    input.onchange = function(e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        var img = new Image();
+        img.onload = function() {
+          var canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          if (!window.jsQR) {
+            setScanError("Loading QR decoder...");
+            var s = document.createElement("script");
+            s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+            s.onload = function(){ decodeImage(imageData); };
+            s.onerror = function(){ setScanError("QR decoder unavailable — use manual entry."); };
+            document.head.appendChild(s);
+          } else {
+            decodeImage(imageData);
+          }
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+    function decodeImage(imageData) {
+      var code = window.jsQR(imageData.data, imageData.width, imageData.height);
+      if (code && code.data) {
+        loadFromQRPayload(code.data, "Flight");
+      } else {
+        setScanError("No QR code found in image — try again");
+      }
+    }
   }
   function stopScanner() {
     if (scannerRef.current) { scannerRef.current.getTracks().forEach(function(t){t.stop();}); scannerRef.current = null; }
     setShowScanner(false);
   }
-  function startPoll() {
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-    function poll() {
-      if (!videoRef.current || !scannerRef.current) return;
-      var vw = videoRef.current.videoWidth;
-      var vh = videoRef.current.videoHeight;
-      canvas.width = vw;
-      canvas.height = vh;
-      if (canvas.width === 0) { setTimeout(poll, 300); return; }
-      ctx.drawImage(videoRef.current, 0, 0, vw, vh);
-      if (window.ZXing) {
-        try {
-          var reader = new window.ZXing.BrowserQRCodeReader();
-          var result = reader.decodeFromCanvas(canvas);
-          if (result && result.getText()) {
-            var ok = loadFromQRPayload(result.getText(), "Flight");
-            if (ok) { stopScanner(); return; }
-            setTimeout(poll, 1000);
-            return;
-          }
-        } catch(e) { /* no QR found yet, keep polling */ }
-      }
-      setTimeout(poll, 500);
-    }
-    if (!window.ZXing) {
-      var s = document.createElement("script");
-      s.src = "https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js";
-      s.onload = function(){ setTimeout(poll, 500); };
-      s.onerror = function(){ setScanError("QR scanner unavailable — use manual entry."); stopScanner(); };
-      document.head.appendChild(s);
-    } else { setTimeout(poll, 300); }
-  }
+  function startPoll() {}
   function computeFirstNine(m) {
     var p1=players[m.p1], p2=players[m.p2];
     if (!p1||!p2) return null;
@@ -773,17 +779,6 @@ export default function App() {
       globalFirstNine={globalFirstNine} onDone={function(){setStep("results");}} onBack={function(){setStep("shitadara");}} />
   );
 
-  // SCANNER SCREEN
-  if (showScanner) return (
-    <div style={{minHeight:"100vh",background:"#000",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
-      <style>{TCSS}</style>
-      <div style={{fontSize:14,color:"#4ade80",marginBottom:12}}>Point camera at QR code</div>
-      <video ref={videoRef} style={{width:"100%",maxWidth:360,borderRadius:8,border:"2px solid #4ade80"}} playsInline muted/>
-      {scanError&&<div style={{color:"#f87171",fontSize:12,marginTop:10,textAlign:"center"}}>{scanError}</div>}
-      <button onClick={stopScanner} style={{marginTop:20,padding:"12px 32px",background:"transparent",color:"#4ade80",border:"1px solid #4ade80",borderRadius:10,cursor:"pointer",fontSize:15}}>Cancel</button>
-    </div>
-  );
-
   // LOAD SCREEN
   if (step==="load") return (
     <div className={tc} style={{minHeight:"100vh",background:"var(--bg)",color:"var(--text)"}}>
@@ -795,7 +790,7 @@ export default function App() {
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 23:00</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-11 00:30</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
@@ -818,7 +813,7 @@ export default function App() {
         <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginTop:20,marginBottom:10}}>ADD PLAYER</div>
         <button onClick={startScanner}
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
-          📷 Scan QR Code <span style={{fontSize:11,color:"var(--dim)",fontWeight:"400"}}>— scan a SWS QR code</span>
+          📷 Scan QR Code <span style={{fontSize:11,color:"var(--dim)",fontWeight:"400"}}>— take photo of SWS QR</span>
         </button>
         <button onClick={function(){setShowManual(function(v){return !v;});}}
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
