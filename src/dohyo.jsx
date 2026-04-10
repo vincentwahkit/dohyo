@@ -552,17 +552,29 @@ function decodeQRPayload(str) {
     var clean = str.trim();
     var parsed = JSON.parse(clean);
     if (!parsed || typeof parsed !== "object") return "not-object";
-    if (parsed.v !== "1" && parsed.v !== 1) return "bad-v:"+parsed.v;
     if (!parsed.ho) return "no-ho";
     if (!parsed.sf) return "no-sf";
     if (!parsed.p) return "no-p";
     var holes = [];
-    for (var i = 0; i < 36; i+=2) {
-      holes.push({ par: parsed.ho[i], si: parsed.ho[i+1] });
-    }
     var scores = [];
-    for (var h = 0; h < 18; h++) {
-      scores.push(parsed.sf.slice(h*4, h*4+4));
+    if (parsed.v === "2") {
+      // Compact format: ho = string "b12a04..." each hole = 1 par char + 2 si digits
+      for (var i = 0; i < parsed.ho.length; i += 3) {
+        var pChar = parsed.ho[i];
+        var par = {a:3,b:4,c:5,d:6}[pChar] || 4;
+        var si = parseInt(parsed.ho.slice(i+1, i+3), 10);
+        holes.push({par:par, si:si});
+      }
+      // sf = base36 string of 72 chars (18 holes × 4 players)
+      var flat = [];
+      for (var j = 0; j < parsed.sf.length; j++) {
+        flat.push(parseInt(parsed.sf[j], 36));
+      }
+      for (var h = 0; h < 18; h++) scores.push(flat.slice(h*4, h*4+4));
+    } else {
+      // v1 format: ho = array of numbers, sf = flat array
+      for (var i = 0; i < 36; i+=2) holes.push({ par: parsed.ho[i], si: parsed.ho[i+1] });
+      for (var h = 0; h < 18; h++) scores.push(parsed.sf.slice(h*4, h*4+4));
     }
     var inPlay = [];
     for (var j = 0; j < 18; j++) {
@@ -575,9 +587,6 @@ function decodeQRPayload(str) {
       holes: holes,
       scores: scores,
       inPlay: inPlay,
-      games: parsed.g,
-      stakes: parsed.st,
-      dollars: parsed.dl,
       nassau: parsed.nassau || [],
       firstNine: parsed.fn || "F"
     };
