@@ -659,7 +659,7 @@ export default function App() {
   async function startScanner() {
     setScanError(null); setShowScanner(true);
     try {
-      var stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:"environment" } });
+      var stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} } });
       if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); scannerRef.current = stream; startPoll(); }
     } catch(e) { setScanError("Camera access denied — use manual entry instead."); setShowScanner(false); }
   }
@@ -672,11 +672,13 @@ export default function App() {
     var ctx = canvas.getContext("2d");
     function poll() {
       if (!videoRef.current || !scannerRef.current) return;
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      var vw = videoRef.current.videoWidth;
+      var vh = videoRef.current.videoHeight;
+      canvas.width = vw;
+      canvas.height = vh;
       if (canvas.width === 0) { setTimeout(poll, 300); return; }
-      ctx.drawImage(videoRef.current, 0, 0);
-      var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(videoRef.current, 0, 0, vw, vh);
+      var img = ctx.getImageData(0, 0, vw, vh);
       if (window.jsQR) {
         var code = window.jsQR(img.data, img.width, img.height);
         if (code && code.data) {
