@@ -652,7 +652,7 @@ export default function App() {
     }
     if (!window.jsQR) {
       var s = document.createElement("script");
-      s.src = "https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js";
+      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
       s.onload = function(){ setTimeout(poll, 500); };
       s.onerror = function(){ setScanError("QR scanner unavailable — use manual entry."); stopScanner(); };
       document.head.appendChild(s);
