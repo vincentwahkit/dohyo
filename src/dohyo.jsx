@@ -548,7 +548,7 @@ function RevealHoles(props) {
 function decodeQRPayload(str) {
   try {
     var d = JSON.parse(str);
-    if (d.v !== "1") return null;
+    if (d.v !== "1") { console.log("DOHYO QR: v mismatch, got:", d.v, "full:", JSON.stringify(d).slice(0,100)); return null; }
     var holes = [];
     for (var i = 0; i < 36; i+=2) holes.push({ par: d.ho[i], si: d.ho[i+1] });
     var scores = [];
@@ -556,7 +556,7 @@ function decodeQRPayload(str) {
     var inPlay = Array.from({length:18}, function(_,i){ return !!(d.ip & (1<<i)); });
     return { courseName:d.c, names:d.p, hcps:d.h, holes:holes, scores:scores,
              inPlay:inPlay, games:d.g, stakes:d.st, dollars:d.dl, nassau:d.nassau||[], firstNine:d.fn };
-  } catch(e) { return null; }
+  } catch(e) { console.log("DOHYO QR parse error:", e.message, "raw:", str.slice(0,100)); return null; }
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
@@ -593,7 +593,7 @@ export default function App() {
   function loadFromQRPayload(payloadStr, sourceLabel) {
     try {
       var d = decodeQRPayload(payloadStr);
-      if (!d) { setScanError("Invalid QR — not a Swimming With Sharks round"); return false; }
+      if (!d) { setScanError("Invalid QR — not a Swimming With Sharks round. Scanned: "+payloadStr.slice(0,40)); return false; }
       if (!checkIntegrity(d.holes, d.courseName)) return false;
       var newPlayers = d.names.map(function(name, pi) {
         return {
