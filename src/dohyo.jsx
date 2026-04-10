@@ -688,37 +688,24 @@ export default function App() {
       canvas.height = vh;
       if (canvas.width === 0) { setTimeout(poll, 300); return; }
       ctx.drawImage(videoRef.current, 0, 0, vw, vh);
-      if (window.ZXing) {
-        try {
-          var hints = new Map();
-          hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
-          var reader = new window.ZXing.BrowserQRCodeReader(hints);
-          reader.decodeFromCanvas(canvas).then(function(result) {
-            if (result && result.getText()) {
-              var ok = loadFromQRPayload(result.getText(), "Flight");
-              if (ok) { polling = false; stopScanner(); return; }
-            }
-            if (polling) setTimeout(poll, 500);
-          }).catch(function() {
-            if (polling) setTimeout(poll, 500);
-          });
+      if (window.jsQR) {
+        var img = ctx.getImageData(0, 0, vw, vh);
+        var code = window.jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+        if (code && code.data) {
+          var ok = loadFromQRPayload(code.data, "Flight");
+          if (ok) { polling = false; stopScanner(); return; }
+          if (polling) setTimeout(poll, 1000);
           return;
-        } catch(e) { /* ZXing not ready */ }
+        }
       }
       setTimeout(poll, 500);
     }
-    if (!window.ZXing) {
+    if (!window.jsQR) {
       setScanError("Loading scanner...");
       var s = document.createElement("script");
-      s.src = "https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js";
-      s.onload = function(){
-        setScanError(null);
-        setTimeout(poll, 300);
-      };
-      s.onerror = function(){
-        setScanError("QR scanner unavailable — use manual entry.");
-        stopScanner();
-      };
+      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+      s.onload = function(){ setScanError(null); setTimeout(poll, 300); };
+      s.onerror = function(){ setScanError("QR scanner unavailable — use manual entry."); stopScanner(); };
       document.head.appendChild(s);
     } else {
       setTimeout(poll, 300);
@@ -810,7 +797,7 @@ export default function App() {
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 23:30</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-10 23:45</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
