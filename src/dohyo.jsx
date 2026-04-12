@@ -1,7 +1,102 @@
 import { useState, useEffect, useRef } from "react";
 
-const COLORS       = ["#4ade80", "#60a5fa", "#f97316", "#e879f9"];
-const COLORS_LIGHT = ["#16a34a", "#2563eb", "#c2410c", "#9333ea"];
+const COLORS       = ["#4ade80", "#60a5fa", "#f97316", "#e879f9", "#facc15", "#2dd4bf", "#f87171", "#a78bfa"];
+const COLORS_LIGHT = ["#16a34a", "#2563eb", "#c2410c", "#9333ea", "#ca8a04", "#0d9488", "#dc2626", "#7c3aed"];
+
+// ─── PRELOADED COURSES (synced with Tee Box) ─────────────────────────────────
+const PRESET_COURSES = [
+  { id:"laguna-classic", name:"Laguna National", tee:"Classic (Blue)", holes:[
+    {par:4,si:12},{par:4,si:4},{par:5,si:2},{par:3,si:16},
+    {par:4,si:8},{par:4,si:10},{par:3,si:18},{par:4,si:14},
+    {par:5,si:6},{par:4,si:5},{par:3,si:15},{par:4,si:1},
+    {par:5,si:11},{par:5,si:7},{par:4,si:17},{par:4,si:9},
+    {par:3,si:13},{par:4,si:3},
+  ]},
+  { id:"laguna-masters", name:"Laguna National", tee:"Masters (Blue)", holes:[
+    {par:4,si:11},{par:5,si:1},{par:4,si:7},{par:4,si:13},
+    {par:3,si:15},{par:4,si:3},{par:5,si:9},{par:3,si:17},
+    {par:4,si:5},{par:4,si:8},{par:5,si:4},{par:3,si:18},
+    {par:4,si:14},{par:4,si:10},{par:5,si:2},{par:4,si:6},
+    {par:3,si:16},{par:4,si:12},
+  ]},
+  { id:"horizon-hills", name:"Horizon Hills", tee:"Blue", holes:[
+    {par:4,si:11},{par:5,si:1},{par:3,si:15},{par:4,si:17},
+    {par:4,si:13},{par:5,si:5},{par:4,si:3},{par:3,si:9},
+    {par:4,si:7},{par:4,si:10},{par:4,si:6},{par:3,si:14},
+    {par:5,si:16},{par:4,si:2},{par:4,si:8},{par:4,si:18},
+    {par:3,si:12},{par:5,si:4},
+  ]},
+  { id:"nsrcc-changi", name:"NSRCC Changi", tee:"Blue", holes:[
+    {par:4,si:4},{par:5,si:2},{par:5,si:10},{par:4,si:6},
+    {par:4,si:8},{par:3,si:16},{par:4,si:12},{par:4,si:14},
+    {par:3,si:18},{par:4,si:11},{par:4,si:1},{par:3,si:17},
+    {par:4,si:3},{par:5,si:5},{par:3,si:15},{par:4,si:9},
+    {par:4,si:13},{par:5,si:7},
+  ]},
+  { id:"sembawang-back9", name:"Sembawang CC", tee:"Composite 18 (Blue)", holes:[
+    {par:4,si:11},{par:5,si:1},{par:5,si:3},{par:4,si:13},
+    {par:4,si:5},{par:4,si:9},{par:3,si:17},{par:4,si:7},
+    {par:3,si:15},{par:4,si:12},{par:5,si:2},{par:5,si:4},
+    {par:4,si:14},{par:4,si:6},{par:4,si:10},{par:3,si:18},
+    {par:4,si:8},{par:3,si:16},
+  ]},
+  { id:"ioi-palm-villa", name:"IOI Palm Villa", tee:"Blue", holes:[
+    {par:5,si:11},{par:4,si:7},{par:3,si:17},{par:4,si:5},
+    {par:4,si:1},{par:4,si:3},{par:3,si:15},{par:4,si:9},
+    {par:5,si:13},{par:4,si:4},{par:5,si:2},{par:3,si:12},
+    {par:4,si:8},{par:4,si:18},{par:4,si:14},{par:4,si:6},
+    {par:3,si:16},{par:6,si:10},
+  ]},
+  { id:"seletar", name:"Seletar CC", tee:"Blue", holes:[
+    {par:4,si:7},{par:3,si:17},{par:4,si:1},{par:4,si:9},
+    {par:5,si:11},{par:3,si:13},{par:5,si:3},{par:4,si:15},
+    {par:4,si:5},{par:5,si:10},{par:3,si:16},{par:4,si:4},
+    {par:3,si:18},{par:4,si:8},{par:5,si:2},{par:4,si:12},
+    {par:4,si:14},{par:4,si:6},
+  ]},
+  { id:"batam-hills", name:"Batam Hills", tee:"Blue", holes:[
+    {par:4,si:3},{par:3,si:11},{par:4,si:13},{par:3,si:17},
+    {par:5,si:1},{par:4,si:9},{par:4,si:5},{par:4,si:15},
+    {par:4,si:7},{par:4,si:12},{par:4,si:4},{par:5,si:14},
+    {par:4,si:10},{par:4,si:16},{par:4,si:2},{par:4,si:6},
+    {par:5,si:18},{par:4,si:8},
+  ]},
+  { id:"palm-springs-ir", name:"Palm Springs", tee:"Island+Resort (Blue)", holes:[
+    {par:5,si:12},{par:3,si:18},{par:4,si:4},{par:4,si:8},
+    {par:4,si:10},{par:4,si:2},{par:3,si:16},{par:5,si:6},
+    {par:4,si:14},{par:5,si:7},{par:3,si:17},{par:4,si:3},
+    {par:5,si:5},{par:4,si:1},{par:3,si:15},{par:4,si:11},
+    {par:3,si:13},{par:5,si:9},
+  ]},
+  { id:"palm-springs-rp", name:"Palm Springs", tee:"Resort+Palm (Blue)", holes:[
+    {par:5,si:8},{par:3,si:18},{par:4,si:4},{par:5,si:6},
+    {par:4,si:2},{par:3,si:16},{par:4,si:12},{par:3,si:14},
+    {par:5,si:10},{par:5,si:3},{par:4,si:7},{par:5,si:1},
+    {par:3,si:17},{par:4,si:5},{par:4,si:11},{par:3,si:13},
+    {par:4,si:15},{par:4,si:9},
+  ]},
+  { id:"palm-springs-pi", name:"Palm Springs", tee:"Palm+Island (Blue)", holes:[
+    {par:5,si:3},{par:4,si:7},{par:5,si:1},{par:3,si:17},
+    {par:4,si:5},{par:4,si:11},{par:3,si:13},{par:4,si:15},
+    {par:4,si:9},{par:5,si:12},{par:3,si:18},{par:4,si:4},
+    {par:4,si:8},{par:4,si:10},{par:4,si:2},{par:3,si:16},
+    {par:5,si:6},{par:4,si:14},
+  ]},
+  { id:"sukajadi", name:"Sukajadi", tee:"Batam", holes:[
+    {par:4,si:14},{par:4,si:8},{par:5,si:2},{par:3,si:16},
+    {par:4,si:6},{par:4,si:4},{par:4,si:12},{par:5,si:10},
+    {par:3,si:18},{par:3,si:15},{par:4,si:13},{par:4,si:5},
+    {par:4,si:9},{par:3,si:17},{par:5,si:3},{par:4,si:11},
+    {par:4,si:1},{par:5,si:7},
+  ]},
+  { id:"ponderosa", name:"Ponderosa G&CC", tee:"Blue", holes:[
+    {par:4,si:11},{par:3,si:15},{par:4,si:17},{par:4,si:3},
+    {par:4,si:5},{par:5,si:13},{par:3,si:7},{par:4,si:9},
+    {par:5,si:1},{par:4,si:16},{par:5,si:10},{par:3,si:12},
+    {par:4,si:4},{par:4,si:6},{par:4,si:14},{par:4,si:2},
+    {par:3,si:18},{par:5,si:8},
+  ]},
+];
 
 // ─── COMPUTATION ─────────────────────────────────────────────────────────────
 function nassauStrokeSIs(strokes, siList) {
@@ -174,6 +269,25 @@ function DohyoLogo({ size }) {
 }
 
 
+// ─── VOICE ───────────────────────────────────────────────────────────────────
+var _cachedVoice = null;
+function getPreferredVoice() {
+  if (_cachedVoice) return _cachedVoice;
+  if (!window.speechSynthesis) return null;
+  var voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  var male = voices.find(function(v){ return v.lang.startsWith("en") && /daniel|alex|fred|tom|bruce|ralph|albert/i.test(v.name); })
+          || voices.find(function(v){ return v.lang.startsWith("en") && !/samantha|victoria|karen|moira|tessa|fiona|zoe|kate/i.test(v.name); })
+          || voices.find(function(v){ return v.lang.startsWith("en"); });
+  if (male) _cachedVoice = male;
+  return male || null;
+}
+// Trigger voice loading as early as possible
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = function(){ getPreferredVoice(); };
+  getPreferredVoice();
+}
+
 function RevealHoles(props) {
   var r = props.result, m = props.matchup;
   var players = props.players, refHoles = props.refHoles, isLight = props.isLight;
@@ -191,6 +305,7 @@ function RevealHoles(props) {
   var ao = useState(true);  var audioOn = ao[0], setAudioOn = ao[1];
   var wa = useState(false); var waiting = wa[0], setWaiting = wa[1];
   var sh = useState(false); var showHalftime = sh[0], setShowHalftime = sh[1];
+  var ap = useState(false); var autoPlay = ap[0], setAutoPlay = ap[1];
   var speechFired = useRef({});
 
   if (!r || !m) return null;
@@ -242,6 +357,8 @@ function RevealHoles(props) {
     return new Promise(function(resolve) {
       var warm = new SpeechSynthesisUtterance('\u200B'); warm.volume=0; window.speechSynthesis.speak(warm);
       var u = new SpeechSynthesisUtterance(text); u.rate=1.0; u.lang="en-US";
+      var voice = getPreferredVoice();
+      if (voice) u.voice = voice;
       var fb = setTimeout(resolve, Math.max(2000, text.length*60));
       u.onend  = function(){ clearTimeout(fb); resolve(); };
       u.onerror= function(){ clearTimeout(fb); resolve(); };
@@ -249,7 +366,19 @@ function RevealHoles(props) {
     });
   }
 
-  useEffect(function(){ setShowNett(false); setWaiting(false); speechFired.current = {}; }, [playPos]);
+  useEffect(function(){
+    setShowNett(false);
+    speechFired.current = {};
+  }, [playPos]);
+
+  useEffect(function(){
+    if (!autoPlay || !waiting || done || paused || showHalftime) return;
+    var t = setTimeout(function(){
+      setWaiting(false);
+      setPlayPos(function(p){return p+1;});
+    }, 2500);
+    return function(){ clearTimeout(t); };
+  }, [autoPlay, waiting, done, paused, showHalftime]);
 
   useEffect(function(){
     if (!current.inPlay || !hasStroke) return;
@@ -320,7 +449,8 @@ function RevealHoles(props) {
         if (audioOn) await speak(text); else await delay(800);
         if (cancelled) return;
         if (playPos < 17) {
-          if (isFirstNineBound) setShowHalftime(true); else setWaiting(true);
+          if (isFirstNineBound) { setShowHalftime(true); }
+          else { setWaiting(true); }
         } else {
           var net = r.dollars.net, tb = Math.abs(net)/(m.stake||1);
           var ot = net===0 ? "Match all square." : (net>0?p2.name:p1.name)+" pays "+(net>0?p1.name:p2.name)+" "+tb+" "+(tb===1?"ball":"balls")+".";
@@ -336,22 +466,16 @@ function RevealHoles(props) {
 
   return (
     <div style={{minHeight:"100vh",background:isLight?"#f0f0f0":"#000",color:isLight?"#000":"#fff",display:"flex",flexDirection:"column"}}>
+      {/* Top header — match info only */}
       <div style={{background:isLight?"#e0e0e0":"#111",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:isLight?"1px solid #ccc":"1px solid #333"}}>
-        <button onClick={function(){window.speechSynthesis&&window.speechSynthesis.cancel();onBack();}} style={{background:"transparent",border:"none",color:isLight?"#16a34a":"#4ade80",cursor:"pointer",fontSize:15}}>← Back</button>
+        <button onClick={function(){window.speechSynthesis&&window.speechSynthesis.cancel();onBack();}} style={{background:"transparent",border:"none",color:isLight?"#16a34a":"#4ade80",cursor:"pointer",fontSize:15,minWidth:60}}>← Back</button>
         <div style={{textAlign:"center"}}>
           <div style={{fontSize:14,fontWeight:"700",letterSpacing:2,color:isLight?"#16a34a":"#4ade80"}}>MATCH {matchupIdx+1} · {isGDB?"GDB":"NASSAU"}</div>
           <div style={{fontSize:12,color:isLight?"#333":"#aaa"}}>
             <span style={{color:p1col}}>{p1.name}</span> vs <span style={{color:p2col}}>{p2.name}</span>
           </div>
         </div>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <button onClick={function(){window.speechSynthesis&&window.speechSynthesis.cancel();setPlayPos(function(p){return Math.max(0,p-1);});setShowHalftime(false);setDone(false);setWaiting(false);setPaused(false);}} disabled={playPos===0}
-            style={{background:"transparent",border:"1px solid "+(playPos===0?(isLight?"#ccc":"#333"):(isLight?"#bbb":"#222")),borderRadius:6,color:playPos===0?(isLight?"#ccc":"#333"):(isLight?"#333":"#aaa"),cursor:playPos===0?"default":"pointer",fontSize:15,padding:"4px 10px"}}>◀</button>
-          <button onClick={function(){setAudioOn(function(v){return !v;});}}
-            style={{background:"transparent",border:"1px solid "+(audioOn?(isLight?"#16a34a":"#4ade80"):(isLight?"#bbb":"#222")),borderRadius:6,color:audioOn?(isLight?"#16a34a":"#4ade80"):(isLight?"#bbb":"#222"),cursor:"pointer",fontSize:15,padding:"4px 8px"}}>{audioOn?"🔊":"🔇"}</button>
-          <button onClick={function(){if(!paused)window.speechSynthesis&&window.speechSynthesis.cancel();setPaused(function(v){return !v;});}}
-            style={{background:"transparent",border:"1px solid "+(paused?"#f97316":(isLight?"#bbb":"#222")),borderRadius:6,color:paused?"#f97316":(isLight?"#000":"#fff"),cursor:"pointer",fontSize:15,padding:"4px 8px"}}>{paused?"▶":"⏸"}</button>
-        </div>
+        <div style={{minWidth:60}}/>
       </div>
       <div style={{background:isLight?"#d8d8d8":"#0a0a0a",borderBottom:isLight?"1px solid #bbb":"1px solid #222",padding:"12px 16px"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
@@ -493,7 +617,13 @@ function RevealHoles(props) {
                 if (adj===0) return (
                   <div>
                     <div style={{fontSize:16,color:isLight?"#555":"#888"}}>Scratch</div>
-                    <div style={{fontSize:12,color:"#aaa",marginTop:5}}>2nd nine: {Math.abs(orig)} stroke{Math.abs(orig)!==1?"s":""} · <span style={{color:isLight?"#333":"#aaa"}}>no adjustment</span></div>
+                    <div style={{fontSize:12,color:isLight?"#555":"#888",marginTop:5}}>
+                      2nd nine: {Math.abs(orig)} stroke{Math.abs(orig)!==1?"s":""}
+                      {orig!==0
+                        ? <span style={{color:"#4ade80",fontWeight:"700",marginLeft:6}}>→ 0 (▼{Math.abs(orig)} adjusted)</span>
+                        : <span style={{color:isLight?"#333":"#aaa",marginLeft:6}}>· no adjustment</span>
+                      }
+                    </div>
                   </div>
                 );
                 var gvr=adj>0?p1:p2, rcvr=adj>0?p2:p1;
@@ -534,12 +664,39 @@ function RevealHoles(props) {
             )}
             <button onClick={function(){window.speechSynthesis&&window.speechSynthesis.cancel();onDone();}}
               style={{marginTop:20,padding:"14px 32px",background:"#4ade80",color:"#000",border:"none",borderRadius:10,cursor:"pointer",fontSize:16,fontWeight:"700",letterSpacing:2}}>
-              SEE ALL RESULTS →
+              SEE RESULT →
             </button>
           </div>
         )}
       </div>
-      <div style={{height:3,background:isLight?"#ccc":"#333"}}><div style={{height:"100%",background:isLight?"#16a34a":"#4ade80",width:((playPos+1)/18*100)+"%"}}/></div>
+      {/* Bottom controls bar */}
+      <div style={{background:isLight?"#e0e0e0":"#111",borderTop:isLight?"1px solid #ccc":"1px solid #333",padding:"10px 16px"}}>
+        {/* Progress bar */}
+        <div style={{height:3,background:isLight?"#ccc":"#333",borderRadius:2,marginBottom:12}}>
+          <div style={{height:"100%",background:isLight?"#16a34a":"#4ade80",width:((playPos+1)/18*100)+"%",borderRadius:2,transition:"width 0.3s"}}/>
+        </div>
+        {/* Controls row: ◀ | ⏸ | ●AUTO | 🔊 */}
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {/* Rewind */}
+          <button onClick={function(){window.speechSynthesis&&window.speechSynthesis.cancel();setPlayPos(function(p){return Math.max(0,p-1);});setShowHalftime(false);setDone(false);setWaiting(false);setPaused(false);}} disabled={playPos===0}
+            style={{flex:1,height:44,background:"transparent",border:"1px solid "+(playPos===0?(isLight?"#ccc":"#333"):(isLight?"#bbb":"#444")),borderRadius:8,color:playPos===0?(isLight?"#ccc":"#444"):(isLight?"#333":"#aaa"),cursor:playPos===0?"default":"pointer",fontSize:18}}>◀</button>
+          {/* Pause/Resume */}
+          <button onClick={function(){if(!paused)window.speechSynthesis&&window.speechSynthesis.cancel();setPaused(function(v){return !v;});}}
+            style={{flex:1,height:44,background:paused?"#f97316":"transparent",border:"1px solid "+(paused?"#f97316":(isLight?"#bbb":"#444")),borderRadius:8,color:paused?"#000":(isLight?"#333":"#aaa"),cursor:"pointer",fontSize:18}}>
+            {paused?"▶":"⏸"}
+          </button>
+          {/* Auto */}
+          <button onClick={function(){setAutoPlay(function(v){return !v;});}}
+            style={{flex:3,height:44,background:autoPlay?(isLight?"#16a34a":"#4ade80"):"transparent",border:"1px solid "+(autoPlay?(isLight?"#16a34a":"#4ade80"):(isLight?"#bbb":"#444")),borderRadius:8,color:autoPlay?"#000":(isLight?"#555":"#888"),cursor:"pointer",fontSize:13,fontWeight:autoPlay?"700":"400",letterSpacing:1}}>
+            {autoPlay?"● AUTO":"○ AUTO"}
+          </button>
+          {/* Audio — far right */}
+          <button onClick={function(){setAudioOn(function(v){return !v;});}}
+            style={{flex:1,height:44,background:audioOn?(isLight?"#e8f5e8":"#0d2a0d"):"transparent",border:"1px solid "+(audioOn?(isLight?"#16a34a":"#4ade80"):(isLight?"#bbb":"#444")),borderRadius:8,color:audioOn?(isLight?"#16a34a":"#4ade80"):(isLight?"#888":"#555"),cursor:"pointer",fontSize:18}}>
+            {audioOn?"🔊":"🔇"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -551,10 +708,8 @@ function decodeQRPayload(str) {
   try {
     var clean = str.trim();
     var parsed = JSON.parse(clean);
-    if (!parsed || typeof parsed !== "object") return "not-object";
-    if (!parsed.ho) return "no-ho";
-    if (!parsed.sf) return "no-sf";
-    if (!parsed.p) return "no-p";
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!parsed.ho || !parsed.sf || !parsed.p) return null;
     var holes = [];
     var scores = [];
     if (parsed.v === "2") {
@@ -590,13 +745,390 @@ function decodeQRPayload(str) {
       nassau: parsed.nassau || [],
       firstNine: parsed.fn || "F"
     };
-  } catch(e) { return "err:"+e.message.slice(0,40); }
+  } catch(e) { return null; }
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+// ─── REPORT ──────────────────────────────────────────────────────────────────
+function dohyoLogoSVGString(size) {
+  var s = size || 48, c = s/2;
+  var ringR = s*0.43, tawaraW = s*0.032;
+  var h = s*0.30, w = h*0.11, gap = h*0.68, cupR = w*2.2;
+  var topY = c - h*0.48, tipY = topY + h;
+  var lx = c - gap/2 - w/2, rx = c + gap/2 + w/2;
+  function tee(cx) {
+    var stemPath = "M "+(cx-w*0.5)+" "+topY+" L "+(cx+w*0.5)+" "+topY+" L "+(cx+w*0.14)+" "+tipY+" L "+(cx-w*0.14)+" "+tipY+" Z";
+    var rimL=cx-cupR, rimR=cx+cupR, dip=topY+cupR*0.45;
+    var cupPath = "M "+rimL+" "+topY+" C "+(cx-cupR*0.5)+","+topY+" "+cx+","+dip+" "+cx+","+dip+" C "+cx+","+dip+" "+(cx+cupR*0.5)+","+topY+" "+rimR+","+topY+" L "+rimR+","+(topY+cupR*0.22)+" C "+(cx+cupR*0.5)+","+(topY+cupR*0.22)+" "+cx+","+(dip+cupR*0.22)+" "+cx+","+(dip+cupR*0.22)+" C "+cx+","+(dip+cupR*0.22)+" "+(cx-cupR*0.5)+","+(topY+cupR*0.22)+" "+rimL+","+(topY+cupR*0.22)+" Z";
+    return [stemPath, cupPath];
+  }
+  var lt = tee(lx), rt = tee(rx);
+  return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 '+s+' '+s+'" xmlns="http://www.w3.org/2000/svg">'
+    +'<rect width="'+s+'" height="'+s+'" rx="'+(s*0.16)+'" fill="#0a0a0a"/>'
+    +'<circle cx="'+c+'" cy="'+c+'" r="'+(ringR+tawaraW)+'" fill="#1a1006"/>'
+    +'<circle cx="'+c+'" cy="'+c+'" r="'+ringR+'" fill="none" stroke="#d4a843" stroke-width="'+tawaraW+'"/>'
+    +'<circle cx="'+c+'" cy="'+c+'" r="'+(ringR-tawaraW*0.5)+'" fill="#211608"/>'
+    +'<path d="'+lt[0]+'" fill="#ffffff"/>'
+    +'<path d="'+lt[1]+'" fill="#ffffff"/>'
+    +'<path d="'+rt[0]+'" fill="#ffffff"/>'
+    +'<path d="'+rt[1]+'" fill="#ffffff"/>'
+    +'</svg>';
+}
+function generateDohyoReport({ players, matchups, results, refCourseName, globalFirstNine }) {
+  var date = new Date().toLocaleDateString("en-SG", { day:"numeric", month:"long", year:"numeric" });
+  var PCOLS = ["#16a34a","#2563eb","#c2410c","#9333ea","#ca8a04","#0d9488","#dc2626","#7c3aed"];
+
+  function fmtDol(d) { return d===0?"—":d>0?"+$"+d:"-$"+Math.abs(d); }
+  function fmtSt(s, p1name, p2name) { return s===0?"AS":(s>0?p1name:p2name)+" "+Math.abs(s)+" UP"; }
+
+  // Pay up ledger — store color indices alongside names
+  var ledger = {};
+  (results||[]).forEach(function(r,mi){
+    if(!r||r.dollars.net===0) return;
+    var m=matchups[mi], net=r.dollars.net;
+    var payer=net>0?r.p2name:r.p1name, payee=net>0?r.p1name:r.p2name, amt=Math.abs(net);
+    var payerIdx=net>0?m.p2:m.p1, payeeIdx=net>0?m.p1:m.p2;
+    var key=[payer,payee].sort().join("|");
+    if(!ledger[key]) ledger[key]={payer:payer,payee:payee,payerIdx:payerIdx,payeeIdx:payeeIdx,amount:0};
+    ledger[key].amount+=(ledger[key].payer===payer?1:-1)*amt;
+  });
+  var payList = Object.values(ledger).filter(function(s){return s.amount!==0;}).map(function(s){
+    return s.amount<0?{payer:s.payee,payee:s.payer,payerIdx:s.payeeIdx,payeeIdx:s.payerIdx,amount:-s.amount}:s;
+  });
+
+  // Recompute strokes given for a player on a hole, using front/back stroke counts
+  function reportStrokes(strokesForNine, si, holesSI) {
+    if (strokesForNine <= 0) return 0;
+    // Sort SIs ascending, give strokes to lowest SI holes
+    var sorted = holesSI.slice().sort(function(a,b){return a-b;});
+    var threshold = sorted[Math.min(strokesForNine,sorted.length)-1];
+    // Give stroke if this hole's SI <= threshold (handle ties by counting)
+    var given = 0;
+    if (si <= threshold) given = 1;
+    if (strokesForNine > 9 && si <= sorted[strokesForNine-10]) given = 2;
+    return given;
+  }
+
+  // Build scorecard - split front 9 / back 9, gross + nett rows, stroke-adjusted nett
+  function scorecardHTML(r, m) {
+    var p1 = players[m.p1], p2 = players[m.p2];
+    if (!p1||!p2) return "";
+    var holes = p1.holes || p2.holes || [];
+    if (!holes.length) return "";
+
+    // Determine strokes for each nine
+    var isGDB = r.type === "gdb";
+    var sf = globalFirstNine==="front" ? m.strokesFront : m.strokesBack;
+    var sb = globalFirstNine==="front" ? (r.adjSecond!=null?r.adjSecond:m.strokesBack) : (r.adjSecond!=null?r.adjSecond:m.strokesFront);
+    // sf/sb are relative: positive = p1 gives p2, negative = p2 gives p1
+    var frontSIs = holes.slice(0,9).map(function(h){return h.si;});
+    var backSIs  = holes.slice(9,18).map(function(h){return h.si;});
+
+    // sf = strokes for first nine played, sb = strokes for second nine played
+    // Map back to physical holes correctly
+    var physFrontStrokes = globalFirstNine==="front" ? sf : sb;
+    var physBackStrokes  = globalFirstNine==="front" ? sb : sf;
+
+    function getStrokes(hi, player) {
+      var strokes = hi < 9 ? physFrontStrokes : physBackStrokes;
+      var sis = hi < 9 ? frontSIs : backSIs;
+      var h = holes[hi];
+      if (strokes === 0) return 0;
+      var abs = Math.abs(strokes);
+      var given = reportStrokes(abs, h.si, sis);
+      if (strokes > 0) return player===1 ? given : 0;
+      else             return player===0 ? given : 0;
+    }
+
+    function scoreStyle(d){ return d<=-2?"color:#15803d;font-weight:700":d===-1?"color:#16a34a;font-weight:700":d===0?"color:#111":d===1?"color:#9ca3af":"color:#dc2626;font-weight:700"; }
+    function nettStyle(d){ return d<=-1?"color:#15803d;font-weight:700":d===0?"color:#111":"color:#dc2626;font-weight:700"; }
+    function cell(txt,style,w){ return '<td style="padding:2px 3px;text-align:center;font-size:11px;border:1px solid #e5e7eb;min-width:'+(w||18)+'px;'+(style||'')+'">'+txt+'</td>'; }
+    function labelCell(txt,col){ return '<td style="padding:2px 6px;font-size:10px;font-weight:700;border:1px solid #e5e7eb;white-space:nowrap;color:'+(col||'#9ca3af')+'">'+txt+'</td>'; }
+
+    function buildNine(startHi) {
+      var nineHoles = holes.slice(startHi, startHi+9);
+      var isFirst = (startHi===0 && globalFirstNine==="front") || (startHi===9 && globalFirstNine==="back");
+      var label = (startHi===0?"FRONT ":"BACK ") + (isFirst?"(1st)":"(2nd)");
+      // Header — dark shade
+      var hdr = '<td style="padding:2px 6px;font-size:10px;font-weight:700;border:1px solid #e5e7eb;white-space:nowrap;background:#111;color:#fff">'+label+'</td>';
+      nineHoles.forEach(function(h,i){
+        hdr += cell(startHi+i+1,'background:#111;color:#fff;font-weight:700');
+      });
+      hdr += cell('TOT','background:#111;color:#fff;font-weight:700');
+      // Par — medium shade
+      var parRow = labelCell('Par');
+      var partot=0;
+      nineHoles.forEach(function(h){ partot+=h.par;
+        parRow += cell(h.par,'background:#f9fafb;color:#374151');
+      });
+      parRow += cell(partot,'background:#f9fafb;color:#111;font-weight:700');
+      // SI row — lightest shade
+      var siRow = labelCell('SI');
+      nineHoles.forEach(function(h){ siRow += cell(h.si,'background:#fafafa;color:#6b7280;font-size:10px'); });
+      siRow += cell('','background:#fafafa');
+      // P1 nett — white
+      var p1n = labelCell(p1.name,PCOLS[m.p1%8]);
+      var p1ntot=0;
+      nineHoles.forEach(function(h,i){ var hi2=startHi+i; var g=p1.scores[hi2]||0; var s=getStrokes(hi2,0); var n=g-s; p1ntot+=n; var dot=s>0?'<sup style="color:#16a34a;font-size:9px">+'+s+'</sup>':''; p1n += cell(n+dot,nettStyle(n-h.par)); });
+      p1n += cell(p1ntot,'font-weight:700;color:'+PCOLS[m.p1%8]);
+      // P2 nett — very light alternate
+      var p2n = labelCell(p2.name,PCOLS[m.p2%8]);
+      var p2ntot=0;
+      nineHoles.forEach(function(h,i){ var hi2=startHi+i; var g=p2.scores[hi2]||0; var s=getStrokes(hi2,1); var n=g-s; p2ntot+=n; var dot=s>0?'<sup style="color:#16a34a;font-size:9px">+'+s+'</sup>':''; p2n += cell(n+dot,'background:#fafafa;'+nettStyle(n-h.par)); });
+      p2n += cell(p2ntot,'background:#fafafa;font-weight:700;color:'+PCOLS[m.p2%8]);
+
+      return '<table style="border-collapse:collapse;width:100%;margin-bottom:6px"><tbody>'
+        +'<tr style="background:#e5e7eb">'+hdr+'</tr>'
+        +'<tr style="background:#f9fafb">'+parRow+'</tr>'
+        +'<tr style="background:#fafafa">'+siRow+'</tr>'
+        +'<tr style="border-top:2px solid #d1d5db">'+p1n+'</tr>'
+        +'<tr style="border-top:1px solid #e5e7eb;background:#fafafa">'+p2n+'</tr>'
+        +'</tbody></table>';
+    }
+
+    return '<div style="overflow-x:auto;font-family:sans-serif">'
+      + buildNine(0)
+      + buildNine(9)
+      +'</div>';
+  }
+
+  // First nine played indicator
+  var firstNineHTML = '<div style="background:#f3f4f6;border-radius:8px;padding:8px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px">'
+    +'<span style="font-size:11px;color:#16a34a;letter-spacing:2px;font-weight:700">PLAY ORDER</span>'
+    +'<span style="font-size:13px;font-weight:700;color:#111">'+(globalFirstNine==="front"?"FRONT → BACK":"BACK → FRONT")+'</span>'
+    +'</div>';
+
+  // Matchup result sections
+  var matchupSections = (results||[]).map(function(r,mi){
+    if(!r) return "";
+    var m=matchups[mi];
+    var net=r.dollars.net;
+    var isGDB=r.type==="gdb";
+    var p1col=PCOLS[m.p1%8], p2col=PCOLS[m.p2%8];
+    var borderCol=net>0?p1col:net<0?p2col:"#e5e7eb";
+    var rows="";
+    if(!isGDB){
+      var u=m.units||[1,1,2];
+      var f9s=globalFirstNine==="front"?(r.front&&r.front.status):(r.back&&r.back.status);
+      var s9s=globalFirstNine==="front"?(r.back&&r.back.status):(r.front&&r.front.status);
+      if(u[0]>0) rows+='<tr><td style="padding:6px 0;color:#6b7280">First 9 ×'+u[0]+'</td><td style="padding:6px 0;color:#6b7280">'+fmtSt(f9s,r.p1name,r.p2name)+'</td><td style="padding:6px 0;text-align:right;font-weight:700">'+fmtDol(r.dollars.frontDollars)+'</td></tr>';
+      if(u[1]>0) rows+='<tr><td style="padding:6px 0;color:#6b7280">Second 9 ×'+u[1]+'</td><td style="padding:6px 0;color:#6b7280">'+fmtSt(s9s,r.p1name,r.p2name)+'</td><td style="padding:6px 0;text-align:right;font-weight:700">'+fmtDol(r.dollars.backDollars)+'</td></tr>';
+      if(u[2]>0) rows+='<tr><td style="padding:6px 0;color:#6b7280">Overall ×'+u[2]+'</td><td style="padding:6px 0;color:#6b7280">'+fmtSt(r.overall&&r.overall.status,r.p1name,r.p2name)+'</td><td style="padding:6px 0;text-align:right;font-weight:700">'+fmtDol(r.dollars.overallDollars)+'</td></tr>';
+    } else {
+      [["FIRST 9",globalFirstNine==="front"?r.front:r.back,globalFirstNine==="front"?r.dollars.front:r.dollars.back],
+       ["SECOND 9",globalFirstNine==="front"?r.back:r.front,globalFirstNine==="front"?r.dollars.back:r.dollars.front]].forEach(function(row){
+        var lbl=row[0],seg=row[1],dol=row[2];
+        if(!seg||!dol) return;
+        rows+='<tr><td colspan="3" style="padding:4px 0 2px;font-size:11px;color:#9ca3af;font-weight:700;letter-spacing:1px">'+lbl+'</td></tr>';
+        rows+='<tr><td style="padding:4px 0;color:#6b7280;padding-left:8px">Game ×3</td><td style="padding:4px 0;color:#6b7280">'+fmtSt(seg.game?seg.game.status:0,r.p1name,r.p2name)+'</td><td style="text-align:right;font-weight:700">'+fmtDol(dol.gameDollars)+'</td></tr>';
+        if(seg.dormie) rows+='<tr><td style="padding:4px 0;color:#6b7280;padding-left:8px">Dormie ×1</td><td style="padding:4px 0;color:#6b7280">'+fmtSt(seg.dormie.status,r.p1name,r.p2name)+'</td><td style="text-align:right;font-weight:700">'+fmtDol(dol.dormieDollars)+'</td></tr>';
+        if(seg.buy) rows+='<tr><td style="padding:4px 0;color:#6b7280;padding-left:8px">Bye ×1</td><td style="padding:4px 0;color:#6b7280">'+fmtSt(seg.buy.status,r.p1name,r.p2name)+'</td><td style="text-align:right;font-weight:700">'+fmtDol(dol.buyDollars)+'</td></tr>';
+      });
+    }
+    return '<div style="border:2px solid '+borderCol+';border-radius:10px;padding:16px;margin-bottom:16px">'
+      +'<div style="font-size:11px;color:#16a34a;letter-spacing:2px;font-weight:700;margin-bottom:6px">MATCH '+(mi+1)+' · '+(isGDB?"GDB":"NASSAU")+'</div>'
+      +(function(){
+        var sf2 = globalFirstNine==="front" ? m.strokesFront : m.strokesBack;
+        var sb2 = globalFirstNine==="front" ? (r.adjSecond!=null?r.adjSecond:m.strokesBack) : (r.adjSecond!=null?r.adjSecond:m.strokesFront);
+        var adj = (sb2 !== (globalFirstNine==="front"?m.strokesBack:m.strokesFront));
+        var origSb = globalFirstNine==="front" ? m.strokesBack : m.strokesFront;
+        function strokeCompact(strokes, label, origStrokes) {
+          var adjNote = (origStrokes!==undefined && origStrokes!==strokes) ? ' <span style="color:#f97316;font-size:10px">('+Math.abs(origStrokes)+')</span>' : '';
+          if (strokes===0) return '<span style="color:#9ca3af">'+label+': scratch</span>'+adjNote;
+          var giver = strokes>0 ? r.p1name : r.p2name;
+          var giverCol = strokes>0 ? p1col : p2col;
+          return '<span style="color:#9ca3af">'+label+':</span> <span style="color:'+giverCol+';font-weight:700">'+giver+'</span> <span style="color:#9ca3af">gives</span> <b style="color:#111">'+Math.abs(strokes)+'</b>'+adjNote;
+        }
+        return '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
+          +'<div style="font-size:18px;font-weight:800">'
+          +'<span style="color:'+p1col+'">'+r.p1name+'</span> <span style="color:#9ca3af;font-size:14px">vs</span> <span style="color:'+p2col+'">'+r.p2name+'</span>'
+          +'</div>'
+          +'<div style="font-size:11px;text-align:right;line-height:1.8;flex-shrink:0;margin-left:10px">'
+          +'<div>'+strokeCompact(sf2,'1st Nine')+'</div>'
+          +'<div>'+strokeCompact(sb2,'2nd Nine',adj?origSb:undefined)+'</div>'
+          +'</div>'
+          +'</div>';
+      })()
+      +'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tbody>'+rows+'</tbody></table>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e5e7eb;padding-top:10px">'
+      +(net===0
+        ?'<span style="font-weight:700;color:#6b7280">All Square</span><span style="font-size:22px;color:#9ca3af">—</span>'
+        :'<span style="font-size:14px;font-weight:700"><span style="color:'+(net>0?p2col:p1col)+'">'+(net>0?r.p2name:r.p1name)+'</span> <span style="color:#9ca3af">owes</span> <span style="color:'+(net>0?p1col:p2col)+'">'+(net>0?r.p1name:r.p2name)+'</span></span>'
+        +'<span style="font-size:26px;font-weight:800;color:#16a34a">$'+Math.abs(net)+'</span>'
+      )
+      +'</div>'
+      +'<div style="margin-top:16px;border-top:1px solid #e5e7eb;padding-top:12px">'
+      +'<div style="font-size:11px;color:#9ca3af;letter-spacing:2px;margin-bottom:8px">SCORECARD (NETT)</div>'
+      +scorecardHTML(r,m)
+      +'</div>'
+      +'</div>';
+  }).join("");
+
+  // Build name→color lookup from players array and matchup results
+  var nameColorMap = {};
+  players.forEach(function(p,i){ nameColorMap[p.name] = PCOLS[i%8]; });
+  // Also map from matchup player indices directly
+  (results||[]).forEach(function(r,mi){
+    if (!r) return;
+    var m = matchups[mi];
+    nameColorMap[r.p1name] = PCOLS[m.p1%8];
+    nameColorMap[r.p2name] = PCOLS[m.p2%8];
+  });
+
+  // Pay up section
+  var payHTML = payList.length ? '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:20px">'
+    +'<div style="font-size:11px;color:#16a34a;letter-spacing:2px;font-weight:700;margin-bottom:12px">PAY UP</div>'
+    +payList.map(function(s){
+      var payerCol = PCOLS[s.payerIdx%8];
+      var payeeCol = PCOLS[s.payeeIdx%8];
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #e5e7eb">'
+        +'<span style="font-size:15px"><span style="color:'+payerCol+';font-weight:700">'+s.payer+'</span> <span style="color:#9ca3af">pays</span> <span style="color:'+payeeCol+';font-weight:700">'+s.payee+'</span></span>'
+        +'<span style="font-size:22px;font-weight:800;color:#16a34a">$'+s.amount+'</span>'
+        +'</div>';
+    }).join("")
+    +'</div>' : '';
+
+  var logoSVG = dohyoLogoSVGString(48);
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    +'<meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<title>Dohyo Report</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,sans-serif;background:#fff;color:#111;padding:20px;max-width:600px;margin:0 auto}'
+    +'@media print{.no-print{display:none}}</style>'
+    +'</head><body>'
+    +'<div class="no-print" style="margin-bottom:16px">'
+    +'<button onclick="window.print()" style="padding:10px 20px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:700">🖨 Print / Save PDF</button>'
+    +'</div>'
+    // Header
+    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e5e7eb">'
+    +logoSVG
+    +'<div>'
+    +'<div style="font-size:22px;font-weight:900;letter-spacing:4px;line-height:1.1">dohyo</div>'
+    +'<div style="font-size:11px;color:#6b7280;margin-top:1px;line-height:1.3">Step into the ring.<br/>The honors are yours alone.</div>'
+    +'</div>'
+    +'</div>'
+    // Date + course
+    +'<div style="margin-bottom:20px">'
+    +'<div style="font-size:14px;color:#6b7280">'+date+'</div>'
+    +(refCourseName?'<div style="font-size:16px;font-weight:700;margin-top:4px">'+refCourseName+'</div>':'')
+    +'</div>'
+    // Pay up
+    +payHTML
+    // Matchup sections
+    +'<div style="font-size:11px;color:#16a34a;letter-spacing:2px;font-weight:700;margin-bottom:12px">MATCHUP RESULTS</div>'
+    +firstNineHTML
+    +matchupSections
+    +'</body></html>';
+
+  return html;
+}
+
+// ─── SPLASH ──────────────────────────────────────────────────────────────────
+function SplashContent({ onDone }) {
+  var [key, setKey] = useState(0);
+  function replay() { setKey(function(k){ return k+1; }); }
+
+  var s = 120, c = s/2;
+  var ringR = s*0.43, tawaraW = s*0.032;
+  var h = s*0.30, w = h*0.11, gap = h*0.68, cupR = w*2.2;
+  var topY = c - h*0.48, tipY = topY + h;
+
+  function teePaths(cx) {
+    var stemPath = "M "+(cx-w*0.5)+" "+topY+" L "+(cx+w*0.5)+" "+topY+" L "+(cx+w*0.14)+" "+tipY+" L "+(cx-w*0.14)+" "+tipY+" Z";
+    var rimL=cx-cupR, rimR=cx+cupR, dip=topY+cupR*0.45;
+    var cupPath = "M "+rimL+" "+topY+" C "+(cx-cupR*0.5)+","+topY+" "+cx+","+dip+" "+cx+","+dip+" C "+cx+","+dip+" "+(cx+cupR*0.5)+","+topY+" "+rimR+","+topY+" L "+rimR+","+(topY+cupR*0.22)+" C "+(cx+cupR*0.5)+","+(topY+cupR*0.22)+" "+cx+","+(dip+cupR*0.22)+" "+cx+","+(dip+cupR*0.22)+" C "+cx+","+(dip+cupR*0.22)+" "+(cx-cupR*0.5)+","+(topY+cupR*0.22)+" "+rimL+","+(topY+cupR*0.22)+" Z";
+    return [stemPath, cupPath];
+  }
+
+  var lx = c - gap/2 - w/2;
+  var rx = c + gap/2 + w/2;
+  var lt = teePaths(lx), rt = teePaths(rx);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:24}}>
+      <style>{`
+        @keyframes ringAppear {
+          0%   { opacity:0; transform: scale(0.5); }
+          30%  { opacity:1; transform: scale(1.05); }
+          45%  { transform: scale(0.97); }
+          55%  { transform: scale(1); }
+          100% { opacity:1; transform: scale(1); }
+        }
+        @keyframes slideInLeft {
+          0%   { transform: translateX(-180px); opacity:0; }
+          100% { transform: translateX(0px); opacity:1; }
+        }
+        @keyframes slideInRight {
+          0%   { transform: translateX(180px); opacity:0; }
+          100% { transform: translateX(0px); opacity:1; }
+        }
+        @keyframes clashFlash {
+          0%   { opacity:0; transform:translate(-50%,-50%) scale(0.2); }
+          10%  { opacity:1; transform:translate(-50%,-50%) scale(1.4); }
+          40%  { opacity:0; transform:translate(-50%,-50%) scale(0.8); }
+          100% { opacity:0; }
+        }
+        @keyframes titleRise {
+          0%   { opacity:0; transform: translateY(24px); }
+          100% { opacity:1; transform: translateY(0); }
+        }
+        @keyframes taglineRise {
+          0%   { opacity:0; }
+          100% { opacity:1; }
+        }
+        @keyframes btnAppear {
+          0%   { opacity:0; }
+          100% { opacity:1; }
+        }
+        .ring-anim  { animation: ringAppear   0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both; }
+        .tee-left   { animation: slideInLeft  0.5s cubic-bezier(0.22,1,0.36,1) 1.0s both; }
+        .tee-right  { animation: slideInRight 0.5s cubic-bezier(0.22,1,0.36,1) 1.0s both; }
+        .clash      { animation: clashFlash   0.6s ease 1.45s both; }
+        .title-anim { animation: titleRise    0.6s ease 1.6s both; }
+        .tagline-anim { animation: taglineRise 0.5s ease 2.0s both; }
+        .btn-anim   { animation: btnAppear    0.5s ease 2.5s both; }
+      `}</style>
+      {/* Animated content — keyed so replay resets all animations */}
+      <div key={key} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:24}}>
+        <div style={{position:"relative",width:s,height:s}}>
+          <svg className="ring-anim" width={s} height={s} viewBox={"0 0 "+s+" "+s} style={{position:"absolute",top:0,left:0}}>
+            <rect width={s} height={s} rx={s*0.16} fill="#0a0a0a"/>
+            <circle cx={c} cy={c} r={ringR+tawaraW} fill="#1a1006"/>
+            <circle cx={c} cy={c} r={ringR} fill="none" stroke="#d4a843" strokeWidth={tawaraW}/>
+            <circle cx={c} cy={c} r={ringR-tawaraW*0.5} fill="#211608"/>
+          </svg>
+          <svg className="tee-left" width={s} height={s} viewBox={"0 0 "+s+" "+s} style={{position:"absolute",top:0,left:0}}>
+            <path d={lt[0]} fill="#ffffff"/>
+            <path d={lt[1]} fill="#ffffff"/>
+          </svg>
+          <svg className="tee-right" width={s} height={s} viewBox={"0 0 "+s+" "+s} style={{position:"absolute",top:0,left:0}}>
+            <path d={rt[0]} fill="#ffffff"/>
+            <path d={rt[1]} fill="#ffffff"/>
+          </svg>
+          <div className="clash" style={{position:"absolute",top:"50%",left:"50%",width:50,height:50,borderRadius:"50%",background:"radial-gradient(circle, rgba(212,168,67,0.95) 0%, rgba(212,168,67,0.3) 50%, transparent 70%)",pointerEvents:"none"}}/>
+        </div>
+        <div className="title-anim" style={{textAlign:"center"}}>
+          <div style={{fontSize:42,fontWeight:"900",letterSpacing:6,color:"#fff",lineHeight:1}}>dohyo</div>
+        </div>
+        <div className="tagline-anim" style={{fontSize:13,color:"#d4a843",letterSpacing:1,textAlign:"center",lineHeight:1.6}}>
+          Step into the ring.<br/>The honors are yours alone.
+        </div>
+        <div className="btn-anim" style={{display:"flex",gap:10,marginTop:8}}>
+          <button onClick={onDone} style={{padding:"12px 28px",background:"transparent",border:"1px solid #d4a843",borderRadius:24,color:"#d4a843",fontSize:14,cursor:"pointer",letterSpacing:2}}>
+            ENTER →
+          </button>
+          <button onClick={replay} style={{padding:"12px 16px",background:"transparent",border:"1px solid #555",borderRadius:24,color:"#555",fontSize:14,cursor:"pointer"}}>
+            ↺
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   var il = useState(false); var isLight=il[0], setIsLight=il[1];
-  var st = useState("load"); var step=st[0], setStep=st[1];
+  var st = useState("splash"); var step=st[0], setStep=st[1];
   var pl = useState([]); var players=pl[0], setPlayers=pl[1];
   var rh = useState(null); var refHoles=rh[0], setRefHoles=rh[1];
   var rc = useState(null); var refCourseName=rc[0], setRefCourseName=rc[1];
@@ -606,13 +1138,53 @@ export default function App() {
   var rs = useState(null); var results=rs[0], setResults=rs[1];
   var ht = useState(null); var halftimeResults=ht[0], setHalftimeResults=ht[1];
   var sm = useState(false); var showManual=sm[0], setShowManual=sm[1];
+  var cm = useState(false); var showCourseModal=cm[0], setShowCourseModal=cm[1];
   var mn = useState(""); var manualName=mn[0], setManualName=mn[1];
   var ms = useState(Array(18).fill("")); var manualScores=ms[0], setManualScores=ms[1];
   var si = useState(0); var slowIdx=si[0], setSlowIdx=si[1];
   var sc = useState(false); var showScanner=sc[0], setShowScanner=sc[1];
   var se = useState(null); var scanError=se[0], setScanError=se[1];
+  var pp2 = useState(null); var pendingPlayers=pp2[0], setPendingPlayers=pp2[1];
+  var rp = useState(null); var reportHTML=rp[0], setReportHTML=rp[1];
   var videoRef = useRef(null);
   var scannerRef = useRef(null);
+  useEffect(function(){
+    try {
+      var session = {
+        players: players, refHoles: refHoles, refCourseName: refCourseName,
+        globalFirstNine: globalFirstNine, matchups: matchups, results: results,
+        savedAt: Date.now()
+      };
+      localStorage.setItem("dohyo_session", JSON.stringify(session));
+    } catch(e) {}
+  }, [players, refHoles, matchups, results]);
+
+  // Check for existing session on mount
+  var savedSessionRef = useRef(null);
+  var [hasSession, setHasSession] = useState(function(){
+    try {
+      var s = localStorage.getItem("dohyo_session");
+      if (s) { var d = JSON.parse(s); if (d.players && d.players.length > 0) { savedSessionRef.current = d; return true; } }
+    } catch(e) {}
+    return false;
+  });
+  function clearSession() {
+    try { localStorage.removeItem("dohyo_session"); } catch(e) {}
+    savedSessionRef.current = null;
+    setHasSession(false);
+  }
+  function resumeSession() {
+    var d = savedSessionRef.current;
+    if (!d) return;
+    if (d.players) setPlayers(d.players);
+    if (d.refHoles) setRefHoles(d.refHoles);
+    if (d.refCourseName) setRefCourseName(d.refCourseName);
+    if (d.globalFirstNine) setGlobalFirstNine(d.globalFirstNine);
+    if (d.matchups) setMatchups(d.matchups);
+    if (d.results) setResults(d.results);
+    savedSessionRef.current = null;
+    setHasSession(false);
+  }
 
   var tc = isLight ? "lm" : "dm";
   function CP(i){ return isLight ? COLORS_LIGHT[i%4] : COLORS[i%4]; }
@@ -627,17 +1199,12 @@ export default function App() {
   function loadFromQRPayload(payloadStr, sourceLabel) {
     try {
       var d = decodeQRPayload(payloadStr);
-      if (typeof d === "string") {
-        setScanError("Decode error: "+d+" ("+payloadStr.length+" chars)");
-        return false;
-      }
       if (!d) {
-        var isJson = payloadStr.trim().startsWith("{");
-        setScanError(isJson ? "QR scan incomplete ("+payloadStr.length+" chars) — try pasting below" : "Invalid QR — not a Swimming With Sharks round");
+        setScanError("Could not read QR — try again or use manual entry");
         return false;
       }
       if (!d.names || !d.holes || !d.scores) {
-        setScanError("QR decoded but missing fields: names="+!!d.names+" holes="+!!d.holes+" scores="+!!d.scores);
+        setScanError("QR decoded but missing fields");
         return false;
       }
       if (!checkIntegrity(d.holes, d.courseName)) return false;
@@ -649,6 +1216,28 @@ export default function App() {
           holes: d.holes,
         };
       });
+      // Check for duplicate names - append (2),(3) etc to dupes
+      var existingNames = players.map(function(p){ return p.name.toLowerCase(); });
+      var dupes = newPlayers.filter(function(p){ return existingNames.indexOf(p.name.toLowerCase()) >= 0; });
+      if (dupes.length > 0) {
+        var allNames = existingNames.slice();
+        var renamedPlayers = newPlayers.map(function(p){
+          if (allNames.indexOf(p.name.toLowerCase()) < 0) {
+            allNames.push(p.name.toLowerCase());
+            return p;
+          }
+          // Find next available suffix
+          var base = p.name.replace(/ \d+$/, '').slice(0, 7); // max 7 chars for base
+          var n = 2;
+          var candidate = base + n;
+          while (allNames.indexOf(candidate.toLowerCase()) >= 0) { n++; candidate = base + n; }
+          allNames.push(candidate.toLowerCase());
+          return Object.assign({}, p, { name: candidate });
+        });
+        setPendingPlayers(renamedPlayers);
+        setScanError("duplicate:"+dupes.map(function(p){return p.name;}).join(", "));
+        return false;
+      }
       setPlayers(function(prev){ return prev.concat(newPlayers); });
       setScanError(null);
       return true;
@@ -660,13 +1249,36 @@ export default function App() {
   }
   function addManualPlayer() {
     if (!manualName.trim()) return;
+    var defaultHoles = refHoles || [{par:4},{par:4},{par:5},{par:3},{par:4},{par:4},{par:3},{par:4},{par:5},{par:4},{par:4},{par:3},{par:4},{par:5},{par:4},{par:3},{par:4},{par:5}];
     setPlayers(function(prev){
-      return prev.concat([{name:manualName.trim(),scores:manualScores.map(function(s){return parseInt(s,10)||0;}),source:"Manual",holes:refHoles}]);
+      return prev.concat([{
+        name: manualName.trim(),
+        scores: manualScores.map(function(s,i){ return parseInt(s,10)||(defaultHoles[i]?defaultHoles[i].par:4); }),
+        source: "Manual",
+        holes: defaultHoles,
+      }]);
     });
-    setManualName(""); setManualScores(Array(18).fill("")); setShowManual(false);
+    setManualName("");
+    setManualScores(defaultHoles.map(function(h){return String(h.par);}));
+    setShowManual(false);
   }
   async function startScanner() {
     setScanError(null);
+    // Preload jsQR library before opening file picker
+    function preloadJsQR(cb) {
+      if (window.jsQR) { cb(); return; }
+      if (document.getElementById('jsqr-script')) {
+        var poll = setInterval(function(){ if (window.jsQR){ clearInterval(poll); cb(); } }, 100);
+        return;
+      }
+      var s = document.createElement("script");
+      s.id = "jsqr-script";
+      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+      s.onload = cb;
+      s.onerror = function(){ setScanError("QR decoder unavailable — use manual entry."); };
+      document.head.appendChild(s);
+    }
+    preloadJsQR(function(){});
     // Trigger native camera via file input
     var input = document.createElement("input");
     input.type = "file";
@@ -679,15 +1291,10 @@ export default function App() {
         var img = new Image();
         img.onload = function() {
           if (!window.jsQR) {
-            setScanError("Loading QR decoder...");
-            var s = document.createElement("script");
-            s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
-            s.onload = function(){ decodeImage(img); };
-            s.onerror = function(){ setScanError("QR decoder unavailable — use manual entry."); };
-            document.head.appendChild(s);
-          } else {
-            decodeImage(img);
+            setScanError("QR decoder still loading — try again in a moment.");
+            return;
           }
+          decodeImage(img);
         };
         img.src = ev.target.result;
       };
@@ -695,7 +1302,6 @@ export default function App() {
     };
     input.click();
     function decodeImage(img) {
-      // Try multiple scales — jsQR works best at moderate resolution
       var scales = [0.5, 1.0, 0.25];
       for (var si = 0; si < scales.length; si++) {
         var scale = scales[si];
@@ -780,27 +1386,116 @@ export default function App() {
   if (step==="slow") return (
     <RevealHoles result={results&&results[slowIdx]} matchup={matchups[slowIdx]} matchupIdx={slowIdx}
       players={players} refHoles={refHoles} isLight={isLight} COLORS_P={CP}
-      globalFirstNine={globalFirstNine} onDone={function(){setStep("results");}} onBack={function(){setStep("shitadara");}} />
+      globalFirstNine={globalFirstNine} onDone={function(){setStep("singleResult");}} onBack={function(){setStep("shitadara");}} />
   );
 
-  // LOAD SCREEN
+  // SPLASH SCREEN
+  if (step==="splash") return (
+    <div className={tc} style={{minHeight:"100vh",background:"#0a0a0a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+      <style>{TCSS}</style>
+      <SplashContent onDone={function(){ setStep("load"); }} />
+    </div>
+  );
+
   if (step==="load") return (
     <div className={tc} style={{minHeight:"100vh",background:"var(--bg)",color:"var(--text)"}}>
       <style>{TCSS}</style>
+      {scanError && scanError.startsWith("duplicate:") && pendingPlayers && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"var(--card)",borderRadius:14,padding:24,width:"100%",maxWidth:380,border:"1px solid #f97316"}}>
+            <div style={{fontSize:18,marginBottom:8}}>⚠️</div>
+            <div style={{fontSize:15,fontWeight:"700",color:"#f97316",marginBottom:8}}>Duplicate players detected</div>
+            <div style={{fontSize:13,color:"var(--muted)",marginBottom:6}}>
+              <b style={{color:"var(--text)"}}>{scanError.replace("duplicate:","")}</b> already loaded.
+            </div>
+            <div style={{fontSize:13,color:"var(--muted)",marginBottom:6}}>
+              Duplicates will be renamed:
+            </div>
+            <div style={{background:"var(--input)",borderRadius:8,padding:"8px 12px",marginBottom:16,fontSize:12,color:"var(--text)"}}>
+              {pendingPlayers && pendingPlayers.filter(function(p){ return p.name.match(/\d+$/); }).map(function(p,i){
+                var orig = p.name.replace(/\d+$/,'');
+                return <div key={i}><span style={{color:"var(--neg)"}}>{orig}</span> → <span style={{color:"var(--accent)",fontWeight:"700"}}>{p.name}</span></div>;
+              })}
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={function(){
+                setPlayers(function(prev){ return prev.concat(pendingPlayers); });
+                setPendingPlayers(null); setScanError(null);
+              }} style={{flex:2,padding:"12px 0",background:"#f97316",color:"#000",border:"none",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700"}}>
+                Load Anyway
+              </button>
+              <button onClick={function(){ setPendingPlayers(null); setScanError(null); }}
+                style={{flex:1,padding:"12px 0",background:"transparent",border:"1px solid var(--border2)",borderRadius:10,color:"var(--muted)",cursor:"pointer",fontSize:14}}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCourseModal && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"var(--card)",borderRadius:14,padding:24,width:"100%",maxWidth:380,border:"1px solid var(--border2)",maxHeight:"80vh",display:"flex",flexDirection:"column"}}>
+            <div style={{fontSize:11,color:"var(--accent)",letterSpacing:3,fontWeight:"700",marginBottom:8}}>SELECT COURSE</div>
+            <div style={{fontSize:13,color:"var(--muted)",marginBottom:16}}>Choose the course being played today</div>
+            <div style={{overflowY:"auto",flex:1,marginBottom:8}}>
+            {PRESET_COURSES.map(function(c){
+              return (
+                <button key={c.id} onClick={function(){
+                  setRefHoles(c.holes);
+                  setRefCourseName(c.name+" — "+c.tee);
+                  setManualScores(c.holes.map(function(h){return String(h.par);}));
+                  setShowCourseModal(false);
+                  setShowManual(true);
+                }} style={{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",background:"var(--input)",border:"1px solid var(--border)",borderRadius:10,cursor:"pointer",marginBottom:8,color:"var(--text)"}}>
+                  <div style={{fontSize:15,fontWeight:"700",color:"var(--text)"}}>{c.name}</div>
+                  <div style={{fontSize:12,color:"var(--muted)",marginTop:2}}>{c.tee} · Par {c.holes.reduce(function(s,h){return s+h.par;},0)}</div>
+                </button>
+              );
+            })}
+            </div>
+            <button onClick={function(){setShowCourseModal(false);}} style={{width:"100%",padding:"12px",background:"transparent",border:"1px solid var(--border)",borderRadius:10,cursor:"pointer",color:"var(--muted)",fontSize:14,marginTop:4}}>Cancel</button>
+          </div>
+        </div>
+      )}
       <div style={{background:"var(--card)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid var(--border)"}}>
         <div style={{width:60}}/>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <DohyoLogo size={36}/>
           <div>
-            <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>Step into the ring, settle the score</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-11 01:00</div>
+            <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>dohyo</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1,lineHeight:1.5}}>Step into the ring.<br/>The honors are yours alone.</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-12 05:45</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
           </div>
         </div>
         <button onClick={function(){setIsLight(function(v){return !v;});}} style={{background:"transparent",border:"none",color:"var(--dim)",cursor:"pointer",fontSize:18,width:60}}>{isLight?"🌙":"☀️"}</button>
       </div>
       <div style={{maxWidth:480,margin:"0 auto",padding:"16px 16px 120px"}}>
+        {hasSession && (function(){
+          var d = savedSessionRef.current;
+          if (!d || !d.players || !d.players.length) return null;
+          var savedAt = d.savedAt ? new Date(d.savedAt).toLocaleDateString("en-SG",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
+          return (
+            <div style={{background:"var(--card)",border:"1px solid var(--border2)",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
+              <div style={{fontSize:11,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:6}}>PREVIOUS SESSION</div>
+              <div style={{fontSize:13,color:"var(--text)",marginBottom:2}}>{d.players.map(function(p){return p.name;}).join(" · ")}</div>
+              {d.refCourseName && <div style={{fontSize:11,color:"var(--dim)",marginBottom:8}}>{d.refCourseName}{savedAt?" · "+savedAt:""}</div>}
+              <div style={{display:"flex",gap:8,marginTop:8}}>
+                <button onClick={resumeSession} style={{flex:2,padding:"10px 0",background:"var(--accent)",color:"#000",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:"700"}}>Resume</button>
+                <button onClick={clearSession} style={{flex:1,padding:"10px 0",background:"transparent",border:"1px solid var(--neg)",borderRadius:8,color:"var(--neg)",cursor:"pointer",fontSize:13}}>Discard</button>
+              </div>
+            </div>
+          );
+        })()}
+        {refCourseName && (
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card)",borderRadius:8,padding:"8px 12px",marginBottom:12,border:"1px solid var(--border)"}}>
+            <div>
+              <div style={{fontSize:9,color:"var(--dim)",letterSpacing:2,marginBottom:2}}>COURSE</div>
+              <div style={{fontSize:13,fontWeight:"700",color:"var(--text)"}}>{refCourseName}</div>
+            </div>
+            <button onClick={function(){setShowCourseModal(true);}} style={{background:"transparent",border:"1px solid var(--border2)",borderRadius:6,color:"var(--accent)",cursor:"pointer",fontSize:12,padding:"4px 10px"}}>Change</button>
+          </div>
+        )}
         <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:10}}>PLAYERS ({players.length})</div>
         {players.map(function(p,i){
           return (
@@ -819,62 +1514,70 @@ export default function App() {
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
           📷 Scan QR Code <span style={{fontSize:11,color:"var(--dim)",fontWeight:"400"}}>— photo or screenshot of SWS QR</span>
         </button>
-        <button onClick={function(){setShowManual(function(v){return !v;});}}
+        <button onClick={function(){
+          if (!showManual) {
+            if (!refHoles) { setShowCourseModal(true); return; }
+            var defaultHoles = refHoles || PRESET_COURSES[0].holes;
+            setManualScores(defaultHoles.map(function(h){return String(h.par);}));
+          }
+          setShowManual(function(v){return !v;});
+        }}
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
           ✏️ Manual Entry
         </button>
-        {showManual && (
-          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:14,marginTop:4}}>
-            <input value={manualName} onChange={function(e){setManualName(e.target.value);}} placeholder="Player name"
-              style={ext(S.inp,{width:"100%",boxSizing:"border-box",marginBottom:12})}/>
-            <div style={{fontSize:11,color:"var(--dim)",marginBottom:6}}>Holes 1–9</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(9,1fr)",gap:4,marginBottom:8}}>
-              {Array.from({length:9},function(_,i){
-                return (
-                  <div key={i} style={{textAlign:"center"}}>
-                    <div style={{fontSize:9,color:"var(--dim)",marginBottom:2}}>{i+1}</div>
-                    <input type="number" min="1" max="15" value={manualScores[i]}
-                      onChange={function(e){var s=manualScores.slice();s[i]=e.target.value;setManualScores(s);}}
-                      style={ext(S.inp,{width:"100%",textAlign:"center",fontSize:13,padding:"3px 2px",boxSizing:"border-box"})}/>
+        {showManual && (function(){
+          var displayHoles = refHoles || PRESET_COURSES[0].holes;
+          function HoleRow(hi) {
+            var par = displayHoles[hi] ? displayHoles[hi].par : 4;
+            var score = parseInt(manualScores[hi],10)||par;
+            var diff = score - par;
+            var scoreCol = diff<=-1?"var(--accent)":diff===0?"var(--text)":diff===1?"var(--muted)":"var(--neg)";
+            return (
+              <div key={hi} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 0",borderBottom:"1px solid var(--border)"}}>
+                <div style={{width:32,textAlign:"center",fontSize:12,color:"var(--muted)",flexShrink:0,fontWeight:"600"}}>H{hi+1}</div>
+                <div style={{flex:1,display:"flex",alignItems:"center",background:"var(--input)",borderRadius:8,overflow:"hidden",border:"1px solid var(--border)"}}>
+                  <button onClick={function(){var s=manualScores.slice();s[hi]=String(Math.max(1,score-1));setManualScores(s);}}
+                    style={{width:44,height:42,background:"transparent",border:"none",cursor:"pointer",fontSize:22,color:"var(--muted)",flexShrink:0}}>−</button>
+                  <div style={{flex:1,textAlign:"center",fontSize:22,fontWeight:"700",color:scoreCol}}>{score}</div>
+                  <button onClick={function(){var s=manualScores.slice();s[hi]=String(score+1);setManualScores(s);}}
+                    style={{width:44,height:42,background:"transparent",border:"none",cursor:"pointer",fontSize:22,color:"var(--muted)",flexShrink:0}}>+</button>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:14,marginTop:4}}>
+              <input value={manualName} onChange={function(e){setManualName(e.target.value);}} placeholder="Player name"
+                style={ext(S.inp,{width:"100%",boxSizing:"border-box",marginBottom:10,fontSize:16})}/>
+
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                <div>
+                  <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:4}}>FRONT 9</div>
+                  {Array.from({length:9},function(_,i){return HoleRow(i);})}
+                  <div style={{fontSize:11,color:"var(--dim)",marginTop:6,textAlign:"right"}}>
+                    Total <b style={{color:"var(--text)"}}>{Array.from({length:9},function(_,i){return parseInt(manualScores[i],10)||(displayHoles[i]?displayHoles[i].par:4);}).reduce(function(a,b){return a+b;},0)}</b>
                   </div>
-                );
-              })}
-            </div>
-            <div style={{fontSize:11,color:"var(--dim)",marginBottom:6}}>Holes 10–18</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(9,1fr)",gap:4,marginBottom:12}}>
-              {Array.from({length:9},function(_,i){
-                return (
-                  <div key={i+9} style={{textAlign:"center"}}>
-                    <div style={{fontSize:9,color:"var(--dim)",marginBottom:2}}>{i+10}</div>
-                    <input type="number" min="1" max="15" value={manualScores[i+9]}
-                      onChange={function(e){var s=manualScores.slice();s[i+9]=e.target.value;setManualScores(s);}}
-                      style={ext(S.inp,{width:"100%",textAlign:"center",fontSize:13,padding:"3px 2px",boxSizing:"border-box"})}/>
+                </div>
+                <div>
+                  <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:4}}>BACK 9</div>
+                  {Array.from({length:9},function(_,i){return HoleRow(i+9);})}
+                  <div style={{fontSize:11,color:"var(--dim)",marginTop:6,textAlign:"right"}}>
+                    Total <b style={{color:"var(--text)"}}>{Array.from({length:9},function(_,i){return parseInt(manualScores[i+9],10)||(displayHoles[i+9]?displayHoles[i+9].par:4);}).reduce(function(a,b){return a+b;},0)}</b>
                   </div>
-                );
-              })}
+                </div>
+              </div>
+              <button onClick={addManualPlayer} disabled={!manualName.trim()} style={ext(S.btn,{opacity:manualName.trim()?1:0.4})}>Add Player</button>
             </div>
-            <button onClick={addManualPlayer} disabled={!manualName.trim()} style={ext(S.btn,{opacity:manualName.trim()?1:0.4})}>Add Player</button>
-          </div>
-        )}
-        {scanError && !showScanner && (
+          );
+        })()}
+        {scanError && !showScanner && !scanError.startsWith("duplicate:") && (
           <div style={{background:"var(--card)",border:"1px solid var(--neg)",borderRadius:8,padding:"10px 14px",color:"var(--neg)",fontSize:13,marginTop:10}}>
             {scanError}
-            <div style={{marginTop:8}}>
-              <div style={{fontSize:11,color:"var(--muted)",marginBottom:4}}>Paste QR payload manually:</div>
-              <textarea id="qr-paste-input" rows={3}
-                style={{width:"100%",background:"var(--input)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text)",fontSize:11,padding:6,boxSizing:"border-box",fontFamily:"monospace"}}
-                placeholder='{"v":"1","c":"..."}'/>
-              <button onClick={function(){
-                var val = document.getElementById("qr-paste-input").value;
-                if (val) loadFromQRPayload(val.trim(), "Flight");
-              }} style={{marginTop:6,padding:"8px 16px",background:"var(--accent)",color:"#000",border:"none",borderRadius:6,cursor:"pointer",fontSize:13,fontWeight:"700"}}>
-                Try Paste
-              </button>
-            </div>
           </div>
         )}
+
       </div>
-      {players.length>=2 && (
+      {players.length>=1 && (
         <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"12px 16px 16px",background:isLight?"linear-gradient(0deg,#fff 70%,transparent)":"linear-gradient(0deg,#0a1a0a 70%,transparent)"}}>
           <button onClick={function(){setStep("preview");}} style={S.btn}>PREVIEW SCORES →</button>
         </div>
@@ -892,7 +1595,7 @@ export default function App() {
           <button onClick={function(){setStep("load");}} style={{background:"transparent",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:15}}>← Back</button>
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:18,fontWeight:"700",letterSpacing:1}}>SCORE PREVIEW</div>
-            <div style={{fontSize:11,color:"var(--dim)"}}>{refCourseName||"Course"}</div>
+            <div style={{fontSize:14,fontWeight:"600",color:"var(--muted)"}}>{refCourseName||"Course"}</div>
           </div>
           <div style={{width:60}}/>
         </div>
@@ -1083,7 +1786,7 @@ export default function App() {
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <DohyoLogo size={32}/>
           <div>
-            <div style={{fontSize:16,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>DOHYO</div>
+            <div style={{fontSize:16,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>dohyo</div>
             <div style={{fontSize:9,color:"var(--muted)",letterSpacing:1}}>Settle the score</div>
           </div>
         </div>
@@ -1144,13 +1847,13 @@ export default function App() {
               </div>
               {/* Fast / Slow buttons */}
               <div style={{display:"flex",gap:10}}>
-                <button onClick={function(){setStep("results");}}
+                <button onClick={function(){setSlowIdx(mi);setStep("singleResult");}}
                   style={{flex:1,padding:"14px 0",background:"var(--input)",color:"var(--text)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:16,fontWeight:"700",letterSpacing:1}}>
                   ⚡ FAST
                 </button>
                 <button onClick={function(){setSlowIdx(mi);setStep("slow");}}
                   style={{flex:2,padding:"14px 0",background:"var(--accent)",color:"#000",border:"none",borderRadius:10,cursor:"pointer",fontSize:18,fontWeight:"800",letterSpacing:2}}>
-                  🎙 ENTER DOHYO
+                  🎙 ENTER dohyo
                 </button>
               </div>
             </div>
@@ -1160,14 +1863,112 @@ export default function App() {
     </div>
   );
 
-  // RESULTS SCREEN
+  // SINGLE RESULT SCREEN
+  if (step==="singleResult") {
+    var sr = results && results[slowIdx];
+    var sm2 = matchups[slowIdx];
+    if (!sr || !sm2) { setStep("results"); return null; }
+    var srp1col = CP(sm2.p1), srp2col = CP(sm2.p2);
+    var srnet = sr.dollars.net;
+    var srwinner = srnet>0?sr.p1name:srnet<0?sr.p2name:null;
+    var srloser = srnet>0?sr.p2name:srnet<0?sr.p1name:null;
+    var srIsGDB = sr.type==="gdb";
+    return (
+      <div className={tc} style={{minHeight:"100vh",background:"var(--bg)",color:"var(--text)"}}>
+        <style>{TCSS}</style>
+        <div style={{background:"var(--card)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid var(--border)"}}>
+          <button onClick={function(){setStep("shitadara");}} style={{background:"transparent",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:15}}>← Back</button>
+          <div style={{fontSize:16,fontWeight:"700",letterSpacing:1}}>MATCH {slowIdx+1} RESULT</div>
+          <button onClick={function(){setStep("results");}} style={{background:"transparent",border:"none",color:"var(--dim)",cursor:"pointer",fontSize:13}}>All →</button>
+        </div>
+        <div style={{maxWidth:480,margin:"0 auto",padding:"16px 16px 40px"}}>
+          <div style={{background:"var(--card)",border:"2px solid "+(srnet>0?srp1col:srnet<0?srp2col:"var(--border)"),borderRadius:10,padding:14,marginBottom:14}}>
+            <div style={{fontSize:11,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:6}}>MATCH {slowIdx+1} · {srIsGDB?"GDB":"NASSAU"}</div>
+            <div style={{fontSize:18,fontWeight:"800",marginBottom:6}}>
+              <span style={{color:srp1col}}>{sr.p1name}</span>
+              {" "}<span style={{color:"var(--dim)",fontSize:13}}>vs</span>{" "}
+              <span style={{color:srp2col}}>{sr.p2name}</span>
+            </div>
+            {!srIsGDB && (function(){
+              var u=sm2.units||[1,1,2];
+              var f9s=globalFirstNine==="front"?(sr.front&&sr.front.status):(sr.back&&sr.back.status);
+              var s9s=globalFirstNine==="front"?(sr.back&&sr.back.status):(sr.front&&sr.front.status);
+              function fmtS(s){return s===0?"AS":(s>0?sr.p1name:sr.p2name)+" "+Math.abs(s)+" UP";}
+              function row(label,dol,status){
+                return (
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
+                    <div>
+                      <span style={{fontSize:15,color:"var(--muted)"}}>{label}</span>
+                      <span style={{fontSize:15,color:status>0?srp1col:status<0?srp2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtS(status)}</span>
+                    </div>
+                    <span style={{fontSize:16,color:dol>0?srp1col:dol<0?srp2col:"var(--dim)",fontWeight:"700"}}>{dol===0?"—":dol>0?"+$"+dol:"-$"+Math.abs(dol)}</span>
+                  </div>
+                );
+              }
+              return (
+                <div style={{marginBottom:10}}>
+                  {u[0]>0 && row("First 9 ×"+u[0], sr.dollars.frontDollars, f9s)}
+                  {u[1]>0 && row("Second 9 ×"+u[1], sr.dollars.backDollars, s9s)}
+                  {u[2]>0 && row("Overall ×"+u[2], sr.dollars.overallDollars, sr.overall&&sr.overall.status)}
+                </div>
+              );
+            })()}
+            {srIsGDB && [
+              ["FIRST 9",  globalFirstNine==="front"?sr.front:sr.back,  globalFirstNine==="front"?sr.dollars.front:sr.dollars.back],
+              ["SECOND 9", globalFirstNine==="front"?sr.back:sr.front,  globalFirstNine==="front"?sr.dollars.back:sr.dollars.front]
+            ].map(function(row){
+              var label=row[0], seg9=row[1], dol9=row[2];
+              if (!seg9||!dol9) return null;
+              var gStatus=seg9.game?seg9.game.status:0;
+              var dStatus=seg9.dormie?seg9.dormie.status:0;
+              var bStatus=seg9.buy?seg9.buy.status:0;
+              function fmtSt(s){return s===0?"AS":(s>0?sr.p1name:sr.p2name)+" "+Math.abs(s)+" UP";}
+              return (
+                <div key={label} style={{marginBottom:8}}>
+                  <div style={{fontSize:10,color:"var(--accent)",letterSpacing:1,fontWeight:"700",marginBottom:4}}>{label}</div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
+                    <div><span style={{fontSize:15,color:"var(--dim)"}}>Game ×3</span><span style={{fontSize:15,color:gStatus>0?srp1col:gStatus<0?srp2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(gStatus)}</span></div>
+                    <span style={{fontSize:16,color:dol9.gameDollars>0?srp1col:dol9.gameDollars<0?srp2col:"var(--dim)",fontWeight:"700"}}>{dol9.gameDollars===0?"—":dol9.gameDollars>0?"+$"+dol9.gameDollars:"-$"+Math.abs(dol9.gameDollars)}</span>
+                  </div>
+                  {seg9.dormie && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
+                    <div><span style={{fontSize:15,color:"var(--dim)"}}>Dormie ×1</span><span style={{fontSize:15,color:dStatus>0?srp1col:dStatus<0?srp2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(dStatus)}</span></div>
+                    <span style={{fontSize:16,color:dol9.dormieDollars>0?srp1col:dol9.dormieDollars<0?srp2col:"var(--dim)",fontWeight:"700"}}>{dol9.dormieDollars===0?"—":dol9.dormieDollars>0?"+$"+dol9.dormieDollars:"-$"+Math.abs(dol9.dormieDollars)}</span>
+                  </div>}
+                  {seg9.buy && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
+                    <div><span style={{fontSize:15,color:"var(--dim)"}}>Bye ×1</span><span style={{fontSize:15,color:bStatus>0?srp1col:bStatus<0?srp2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(bStatus)}</span></div>
+                    <span style={{fontSize:16,color:dol9.buyDollars>0?srp1col:dol9.buyDollars<0?srp2col:"var(--dim)",fontWeight:"700"}}>{dol9.buyDollars===0?"—":dol9.buyDollars>0?"+$"+dol9.buyDollars:"-$"+Math.abs(dol9.buyDollars)}</span>
+                  </div>}
+                </div>
+              );
+            })}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:10,marginTop:4}}>
+              <span style={{fontSize:14,fontWeight:"700",color:"var(--text)"}}>
+                {srnet===0 ? "All Square" :
+                  <span><span style={{color:srnet>0?srp2col:srp1col}}>{srloser}</span><span style={{color:"var(--muted)"}}> owes </span><span style={{color:srnet>0?srp1col:srp2col}}>{srwinner}</span></span>
+                }
+              </span>
+              <span style={{fontSize:26,fontWeight:"700",color:srnet>0?(isLight?"#16a34a":COLORS[0]):srnet<0?"var(--neg)":"var(--dim)"}}>
+                {srnet===0?"—":"$"+Math.abs(srnet)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+    // RESULTS SCREEN
   if (step==="results") return (
     <div className={tc} style={{minHeight:"100vh",background:"var(--bg)",color:"var(--text)"}}>
       <style>{TCSS}</style>
       <div style={{background:"var(--card)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid var(--border)"}}>
         <button onClick={function(){setStep("shitadara");}} style={{background:"transparent",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:15}}>← Back</button>
         <div style={{fontSize:18,fontWeight:"700",letterSpacing:1}}>RESULTS</div>
-        <button onClick={function(){setStep("load");}} style={{background:"transparent",border:"none",color:"var(--dim)",cursor:"pointer",fontSize:13}}>Reset</button>
+        <button onClick={function(){
+          var html = generateDohyoReport({players,matchups,results,refCourseName,globalFirstNine});
+          setReportHTML(html);
+          setStep("report");
+        }} style={{background:"transparent",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:13}}>📄 Report</button>
       </div>
       <div style={{maxWidth:480,margin:"0 auto",padding:"16px 16px 40px"}}>
         <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:10}}>SETTLEMENT</div>
@@ -1283,6 +2084,24 @@ export default function App() {
           );
         })()}
       </div>
+    </div>
+  );
+
+  // REPORT SCREEN
+  if (step==="report") return (
+    <div style={{minHeight:"100vh",background:"#fff",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#f3f4f6",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #e5e7eb",flexShrink:0}}>
+        <button onClick={function(){setStep("results");}} style={{background:"transparent",border:"none",color:"#16a34a",cursor:"pointer",fontSize:15}}>← Back</button>
+        <div style={{fontSize:15,fontWeight:"700",color:"#111"}}>Report</div>
+        <button onClick={function(){
+          var blob = new Blob([reportHTML],{type:"text/html"});
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "dohyo-report.html";
+          a.click();
+        }} style={{background:"transparent",border:"none",color:"#16a34a",cursor:"pointer",fontSize:13}}>⬇ Save</button>
+      </div>
+      <iframe srcDoc={reportHTML} style={{flex:1,border:"none",width:"100%",minHeight:"80vh"}} title="Dohyo Report"/>
     </div>
   );
 
