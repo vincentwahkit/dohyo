@@ -208,7 +208,7 @@ function gdbDollars(matchup, front, back) {
 var TCSS = `
   .dm{--bg:#0a1a0a;--card:#0d2210;--input:#071507;--border:#1e3a1e;--border2:#2a5a2a;--text:#e8f5e8;--muted:#5a8a5a;--dim:#4a7a4a;--neg:#f87171;--accent:#4ade80;}
   .lm{--bg:#fff;--card:#eee;--input:#fff;--border:#ccc;--border2:#888;--text:#000;--muted:#333;--dim:#555;--neg:#c00;--accent:#16a34a;}
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box;font-family:'DM Sans',sans-serif;}
   input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   input[type=number]{-moz-appearance:textfield;}
 `;
@@ -993,7 +993,7 @@ function generateDohyoReport({ players, matchups, results, refCourseName, global
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
     +'<meta name="viewport" content="width=device-width,initial-scale=1">'
     +'<title>Dohyo Report</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,sans-serif;background:#fff;color:#111;padding:20px;max-width:600px;margin:0 auto}'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:\'DM Sans\',sans-serif;background:#fff;color:#111;padding:20px;max-width:600px;margin:0 auto}'
     +'@media print{.no-print{display:none}}</style>'
     +'</head><body>'
     +'<div class="no-print" style="margin-bottom:16px">'
@@ -1108,9 +1108,9 @@ function SplashContent({ onDone }) {
           <div className="clash" style={{position:"absolute",top:"50%",left:"50%",width:50,height:50,borderRadius:"50%",background:"radial-gradient(circle, rgba(212,168,67,0.95) 0%, rgba(212,168,67,0.3) 50%, transparent 70%)",pointerEvents:"none"}}/>
         </div>
         <div className="title-anim" style={{textAlign:"center"}}>
-          <div style={{fontSize:42,fontWeight:"900",letterSpacing:6,color:"#fff",lineHeight:1}}>dohyo</div>
+          <div style={{fontSize:48,fontWeight:"800",letterSpacing:8,color:"#fff",lineHeight:1,fontFamily:"'DM Sans', sans-serif"}}>dohyo</div>
         </div>
-        <div className="tagline-anim" style={{fontSize:13,color:"#d4a843",letterSpacing:1,textAlign:"center",lineHeight:1.6}}>
+        <div className="tagline-anim" style={{fontSize:13,color:"#d4a843",letterSpacing:1,textAlign:"center",lineHeight:1.6,fontFamily:"'DM Sans', sans-serif"}}>
           Step into the ring.<br/>The honors are yours alone.
         </div>
         <div className="btn-anim" style={{display:"flex",gap:10,marginTop:8}}>
@@ -1462,7 +1462,7 @@ export default function App() {
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <DohyoLogo size={36}/>
           <div>
-            <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1}}>dohyo</div>
+            <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1,fontFamily:"'DM Sans', sans-serif"}}>dohyo</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1,lineHeight:1.5}}>Step into the ring.<br/>The honors are yours alone.</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-12 05:45</div>
             <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
