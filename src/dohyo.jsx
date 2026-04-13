@@ -395,13 +395,15 @@ function RevealHoles(props) {
   function speak(text) {
     if (!audioOn || !window.speechSynthesis) return Promise.resolve();
     return new Promise(function(resolve) {
-      var warm = new SpeechSynthesisUtterance('\u200B'); warm.volume=0; window.speechSynthesis.speak(warm);
-      var u = new SpeechSynthesisUtterance(text); u.rate=1.0; u.lang="en-US";
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.0; u.lang = "en-US";
       var voice = getPreferredVoice();
       if (voice) u.voice = voice;
-      var fb = setTimeout(resolve, Math.max(2000, text.length*60));
-      u.onend  = function(){ clearTimeout(fb); resolve(); };
-      u.onerror= function(){ clearTimeout(fb); resolve(); };
+      // Pure time-based wait for iOS reliability
+      // ~120ms per character at rate 1.0, minimum 3000ms, plus 1000ms buffer
+      var ms = Math.max(3000, text.length * 120) + 1000;
+      setTimeout(resolve, ms);
       window.speechSynthesis.speak(u);
     });
   }
@@ -413,12 +415,13 @@ function RevealHoles(props) {
 
   useEffect(function(){
     if (!autoPlay || !waiting || done || paused || showHalftime) return;
-    // When audio is on, speech has already finished before waiting=true is set.
-    // Use a short pause for visual beat. When audio is off, use longer pause.
+    // AUTO mode: advance as soon as Next Hole button appears
+    // Audio on: speech already done, just a short visual beat
+    // Audio off: need a visual pause since there's no speech gate
     var t = setTimeout(function(){
       setWaiting(false);
       setPlayPos(function(p){return p+1;});
-    }, audioOn ? 1200 : 2500);
+    }, audioOn ? 300 : 2500);
     return function(){ clearTimeout(t); };
   }, [autoPlay, waiting, done, paused, showHalftime, audioOn]);
 
