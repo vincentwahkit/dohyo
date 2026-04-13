@@ -1315,12 +1315,14 @@ export default function App() {
     };
     input.click();
     function decodeImage(img) {
-      var scales = [0.5, 1.0, 0.25];
+      // Try multiple scales — QR may be small or large in the screenshot
+      var scales = [1.0, 0.5, 2.0, 0.75, 1.5, 0.25];
       for (var si = 0; si < scales.length; si++) {
         var scale = scales[si];
         var canvas = document.createElement("canvas");
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
+        if (canvas.width < 100 || canvas.height < 100) continue;
         var ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -1330,7 +1332,7 @@ export default function App() {
           return;
         }
       }
-      setScanError("No QR code found — make sure QR fills the frame and try again");
+      setScanError("Could not read QR — try again or use manual entry");
     }
   }
   function stopScanner() {
