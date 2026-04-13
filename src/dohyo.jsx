@@ -1142,6 +1142,8 @@ export default function App() {
   var mn = useState(""); var manualName=mn[0], setManualName=mn[1];
   var ms = useState(Array(18).fill("")); var manualScores=ms[0], setManualScores=ms[1];
   var ep = useState(null); var editingPlayerIdx=ep[0], setEditingPlayerIdx=ep[1];
+  var sp = useState(false); var showPaste=sp[0], setShowPaste=sp[1];
+  var pp3 = useState(""); var pasteText=pp3[0], setPasteText=pp3[1];
   var si = useState(0); var slowIdx=si[0], setSlowIdx=si[1];
   var sc = useState(false); var showScanner=sc[0], setShowScanner=sc[1];
   var se = useState(null); var scanError=se[0], setScanError=se[1];
@@ -1537,6 +1539,30 @@ export default function App() {
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
           📷 Scan QR Code <span style={{fontSize:11,color:"var(--dim)",fontWeight:"400"}}>— photo or screenshot of SWS QR</span>
         </button>
+        <button onClick={function(){ setShowPaste(function(v){return !v;}); setPasteText(""); }}
+          style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
+          📋 Paste Payload <span style={{fontSize:11,color:"var(--dim)",fontWeight:"400"}}>— paste copied payload from Tee Box</span>
+        </button>
+        {showPaste && (
+          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:14,marginBottom:8}}>
+            <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:8}}>PASTE PAYLOAD</div>
+            <textarea value={pasteText} onChange={function(e){setPasteText(e.target.value);}}
+              placeholder="Paste payload from Tee Box here..."
+              style={{width:"100%",boxSizing:"border-box",background:"var(--input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text)",padding:"10px 12px",fontSize:13,fontFamily:"monospace",resize:"vertical",minHeight:80,outline:"none",marginBottom:10}}/>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={function(){setShowPaste(false);setPasteText("");}}
+                style={{flex:1,padding:"12px",background:"transparent",border:"1px solid var(--border)",borderRadius:10,color:"var(--muted)",cursor:"pointer",fontSize:14}}>Cancel</button>
+              <button onClick={function(){
+                if (!pasteText.trim()) return;
+                var ok = loadFromQRPayload(pasteText.trim(), "Pasted");
+                if (ok) { setShowPaste(false); setPasteText(""); }
+              }} disabled={!pasteText.trim()}
+                style={{flex:2,padding:"12px",background:"var(--accent)",color:"#000",border:"none",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:"700",opacity:pasteText.trim()?1:0.4}}>
+                Load →
+              </button>
+            </div>
+          </div>
+        )}
         <button onClick={function(){
           if (!showManual) {
             if (!refHoles) { setShowCourseModal(true); return; }
