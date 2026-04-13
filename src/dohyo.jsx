@@ -531,7 +531,7 @@ function RevealHoles(props) {
 
   return (
     <div style={{minHeight:"100vh",background:isLight?"#f0f0f0":"#000",color:isLight?"#000":"#fff",display:"flex",flexDirection:"column"}}>
-      {/* Top header — match info only */}
+      <style>{TCSS}</style>
       <div style={{background:isLight?"#e0e0e0":"#111",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:isLight?"1px solid #ccc":"1px solid #333"}}>
         <button onClick={function(){window.speechSynthesis&&window.speechSynthesis.cancel();onBack();}} style={{background:"transparent",border:"none",color:isLight?"#16a34a":"#4ade80",cursor:"pointer",fontSize:15,minWidth:60}}>← Back</button>
         <div style={{textAlign:"center"}}>
