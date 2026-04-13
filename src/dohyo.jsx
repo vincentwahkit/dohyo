@@ -877,12 +877,33 @@ function generateDohyoReport({ players, matchups, results, refCourseName, global
       nineHoles.forEach(function(h,i){ var hi2=startHi+i; var g=p2.scores[hi2]||0; var s=getStrokes(hi2,1); var n=g-s; p2ntot+=n; var dot=s>0?'<sup style="color:#16a34a;font-size:9px">+'+s+'</sup>':''; p2n += cell(n+dot,'background:#fafafa;'+nettStyle(n-h.par)); });
       p2n += cell(p2ntot,'background:#fafafa;font-weight:700;color:'+PCOLS[m.p2%8]);
 
+      // Result row — W / H / L per hole + running status
+      var resRow = labelCell('Result','#374151');
+      var running = 0;
+      nineHoles.forEach(function(h,i){
+        var hi2 = startHi+i;
+        var g1 = p1.scores[hi2]||0, g2 = p2.scores[hi2]||0;
+        var s1 = getStrokes(hi2,0), s2 = getStrokes(hi2,1);
+        var n1 = g1>0 ? g1-s1 : null, n2 = g2>0 ? g2-s2 : null;
+        var txt, style;
+        if (n1===null||n2===null) { txt='—'; style='color:#d1d5db'; }
+        else if (n1<n2) { txt='W'; style='color:'+PCOLS[m.p1%8]+';font-weight:700'; running++; }
+        else if (n2<n1) { txt='L'; style='color:'+PCOLS[m.p2%8]+';font-weight:700'; running--; }
+        else            { txt='H'; style='color:#9ca3af'; }
+        resRow += cell(txt, style);
+      });
+      // Running status at end of nine
+      var runTxt = running===0 ? 'AS' : (running>0?p1.name:p2.name)+' '+Math.abs(running)+'UP';
+      var runCol = running>0?PCOLS[m.p1%8]:running<0?PCOLS[m.p2%8]:'#9ca3af';
+      resRow += '<td style="padding:2px 4px;text-align:center;font-size:9px;border:1px solid #e5e7eb;font-weight:700;color:'+runCol+';white-space:nowrap">'+runTxt+'</td>';
+
       return '<table style="border-collapse:collapse;width:100%;margin-bottom:6px"><tbody>'
         +'<tr style="background:#e5e7eb">'+hdr+'</tr>'
         +'<tr style="background:#f9fafb">'+parRow+'</tr>'
         +'<tr style="background:#fafafa">'+siRow+'</tr>'
         +'<tr style="border-top:2px solid #d1d5db">'+p1n+'</tr>'
         +'<tr style="border-top:1px solid #e5e7eb;background:#fafafa">'+p2n+'</tr>'
+        +'<tr style="border-top:2px solid #d1d5db;background:#f0fdf4">'+resRow+'</tr>'
         +'</tbody></table>';
     }
 
