@@ -27,11 +27,11 @@ const PRESET_COURSES = [
     {par:3,si:12},{par:5,si:4},
   ]},
   { id:"nsrcc-changi", name:"NSRCC Changi", tee:"Blue", holes:[
-    {par:4,si:4},{par:5,si:2},{par:5,si:10},{par:4,si:6},
-    {par:4,si:8},{par:3,si:16},{par:4,si:12},{par:4,si:14},
-    {par:3,si:18},{par:4,si:11},{par:4,si:1},{par:3,si:17},
-    {par:4,si:3},{par:5,si:5},{par:3,si:15},{par:4,si:9},
-    {par:4,si:13},{par:5,si:7},
+    {par:4,si:1},{par:5,si:13},{par:5,si:9},{par:4,si:3},
+    {par:4,si:11},{par:3,si:15},{par:4,si:7},{par:4,si:5},
+    {par:3,si:17},{par:4,si:18},{par:4,si:2},{par:3,si:16},
+    {par:4,si:6},{par:5,si:12},{par:3,si:8},{par:4,si:14},
+    {par:4,si:10},{par:5,si:4},
   ]},
   { id:"sembawang-back9", name:"Sembawang CC", tee:"Composite 18 (Blue)", holes:[
     {par:4,si:11},{par:5,si:1},{par:5,si:3},{par:4,si:13},
@@ -1141,6 +1141,7 @@ export default function App() {
   var cm = useState(false); var showCourseModal=cm[0], setShowCourseModal=cm[1];
   var mn = useState(""); var manualName=mn[0], setManualName=mn[1];
   var ms = useState(Array(18).fill("")); var manualScores=ms[0], setManualScores=ms[1];
+  var ep = useState(null); var editingPlayerIdx=ep[0], setEditingPlayerIdx=ep[1];
   var si = useState(0); var slowIdx=si[0], setSlowIdx=si[1];
   var sc = useState(false); var showScanner=sc[0], setShowScanner=sc[1];
   var se = useState(null); var scanError=se[0], setScanError=se[1];
@@ -1250,14 +1251,26 @@ export default function App() {
   function addManualPlayer() {
     if (!manualName.trim()) return;
     var defaultHoles = refHoles || [{par:4},{par:4},{par:5},{par:3},{par:4},{par:4},{par:3},{par:4},{par:5},{par:4},{par:4},{par:3},{par:4},{par:5},{par:4},{par:3},{par:4},{par:5}];
-    setPlayers(function(prev){
-      return prev.concat([{
-        name: manualName.trim(),
-        scores: manualScores.map(function(s,i){ return parseInt(s,10)||(defaultHoles[i]?defaultHoles[i].par:4); }),
-        source: "Manual",
-        holes: defaultHoles,
-      }]);
-    });
+    var newScores = manualScores.map(function(s,i){ return parseInt(s,10)||(defaultHoles[i]?defaultHoles[i].par:4); });
+    if (editingPlayerIdx !== null) {
+      // Edit existing player
+      setPlayers(function(prev){
+        var n = prev.slice();
+        n[editingPlayerIdx] = { ...n[editingPlayerIdx], name: manualName.trim(), scores: newScores, source: "Manual (edited)" };
+        return n;
+      });
+      setEditingPlayerIdx(null);
+    } else {
+      // Add new player
+      setPlayers(function(prev){
+        return prev.concat([{
+          name: manualName.trim(),
+          scores: newScores,
+          source: "Manual",
+          holes: defaultHoles,
+        }]);
+      });
+    }
     setManualName("");
     setManualScores(defaultHoles.map(function(h){return String(h.par);}));
     setShowManual(false);
@@ -1505,10 +1518,18 @@ export default function App() {
                 <div style={{fontSize:15,fontWeight:"700",color:"var(--text)"}}>{p.name}</div>
                 <div style={{fontSize:11,color:"var(--dim)"}}>{p.source} · {p.scores.reduce(function(s,v){return s+v;},0)} total</div>
               </div>
+              <button onClick={function(){
+                setManualName(p.name);
+                setManualScores(p.scores.map(function(s){return String(s);}));
+                setEditingPlayerIdx(i);
+                setShowManual(true);
+              }} style={{background:"transparent",border:"1px solid var(--border2)",borderRadius:6,color:"var(--accent)",cursor:"pointer",fontSize:11,padding:"3px 8px",marginRight:4}}>✏️</button>
               <button onClick={function(){removePlayer(i);}} style={{background:"transparent",border:"1px solid var(--neg)",borderRadius:6,color:"var(--neg)",cursor:"pointer",fontSize:11,padding:"3px 8px"}}>✕</button>
             </div>
           );
         })}
+        {editingPlayerIdx === null && (
+          <>
         <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginTop:20,marginBottom:10}}>ADD PLAYER</div>
         <button onClick={startScanner}
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
@@ -1519,13 +1540,16 @@ export default function App() {
             if (!refHoles) { setShowCourseModal(true); return; }
             var defaultHoles = refHoles || PRESET_COURSES[0].holes;
             setManualScores(defaultHoles.map(function(h){return String(h.par);}));
+            setManualName("");
           }
           setShowManual(function(v){return !v;});
         }}
           style={{padding:14,background:"var(--card)",color:"var(--accent)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:"700",textAlign:"left",width:"100%",marginBottom:8}}>
           ✏️ Manual Entry
         </button>
-        {showManual && (function(){
+          </>
+        )}
+        {(showManual || editingPlayerIdx !== null) && (function(){
           var displayHoles = refHoles || PRESET_COURSES[0].holes;
           function HoleRow(hi) {
             var par = displayHoles[hi] ? displayHoles[hi].par : 4;
@@ -1533,40 +1557,48 @@ export default function App() {
             var diff = score - par;
             var scoreCol = diff<=-1?"var(--accent)":diff===0?"var(--text)":diff===1?"var(--muted)":"var(--neg)";
             return (
-              <div key={hi} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 0",borderBottom:"1px solid var(--border)"}}>
-                <div style={{width:32,textAlign:"center",fontSize:12,color:"var(--muted)",flexShrink:0,fontWeight:"600"}}>H{hi+1}</div>
+              <div key={hi} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 0",borderBottom:"1px solid var(--border)"}}>
+                <div style={{width:34,flexShrink:0,textAlign:"center"}}>
+                  <div style={{fontSize:12,color:"var(--text)",fontWeight:"700",lineHeight:1.2}}>H{hi+1}</div>
+                  <div style={{fontSize:11,color:"var(--text)",fontWeight:"600",lineHeight:1.2,opacity:0.7}}>P{par}</div>
+                </div>
                 <div style={{flex:1,display:"flex",alignItems:"center",background:"var(--input)",borderRadius:8,overflow:"hidden",border:"1px solid var(--border)"}}>
                   <button onClick={function(){var s=manualScores.slice();s[hi]=String(Math.max(1,score-1));setManualScores(s);}}
-                    style={{width:44,height:42,background:"transparent",border:"none",cursor:"pointer",fontSize:22,color:"var(--muted)",flexShrink:0}}>−</button>
-                  <div style={{flex:1,textAlign:"center",fontSize:22,fontWeight:"700",color:scoreCol}}>{score}</div>
+                    style={{width:36,height:40,background:"transparent",border:"none",cursor:"pointer",fontSize:20,color:"var(--muted)",flexShrink:0}}>−</button>
+                  <div style={{flex:1,textAlign:"center",fontSize:20,fontWeight:"700",color:scoreCol}}>{score}</div>
                   <button onClick={function(){var s=manualScores.slice();s[hi]=String(score+1);setManualScores(s);}}
-                    style={{width:44,height:42,background:"transparent",border:"none",cursor:"pointer",fontSize:22,color:"var(--muted)",flexShrink:0}}>+</button>
+                    style={{width:36,height:40,background:"transparent",border:"none",cursor:"pointer",fontSize:20,color:"var(--muted)",flexShrink:0}}>+</button>
                 </div>
+                <div style={{width:26,textAlign:"center",fontSize:12,color:scoreCol,flexShrink:0,fontWeight:"700"}}>{diff===0?"E":diff>0?"+"+diff:diff}</div>
               </div>
             );
           }
           return (
             <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:14,marginTop:4}}>
+              <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:8}}>{editingPlayerIdx!==null?"EDIT PLAYER":"NEW PLAYER"}</div>
               <input value={manualName} onChange={function(e){setManualName(e.target.value);}} placeholder="Player name"
                 style={ext(S.inp,{width:"100%",boxSizing:"border-box",marginBottom:10,fontSize:16})}/>
-
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                 <div>
                   <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:4}}>FRONT 9</div>
                   {Array.from({length:9},function(_,i){return HoleRow(i);})}
-                  <div style={{fontSize:11,color:"var(--dim)",marginTop:6,textAlign:"right"}}>
-                    Total <b style={{color:"var(--text)"}}>{Array.from({length:9},function(_,i){return parseInt(manualScores[i],10)||(displayHoles[i]?displayHoles[i].par:4);}).reduce(function(a,b){return a+b;},0)}</b>
+                  <div style={{fontSize:12,color:"var(--muted)",marginTop:6,textAlign:"right"}}>
+                    Out: <b style={{color:"var(--text)"}}>{Array.from({length:9},function(_,i){return parseInt(manualScores[i],10)||(displayHoles[i]?displayHoles[i].par:4);}).reduce(function(a,b){return a+b;},0)}</b>
                   </div>
                 </div>
                 <div>
                   <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:4}}>BACK 9</div>
                   {Array.from({length:9},function(_,i){return HoleRow(i+9);})}
-                  <div style={{fontSize:11,color:"var(--dim)",marginTop:6,textAlign:"right"}}>
-                    Total <b style={{color:"var(--text)"}}>{Array.from({length:9},function(_,i){return parseInt(manualScores[i+9],10)||(displayHoles[i+9]?displayHoles[i+9].par:4);}).reduce(function(a,b){return a+b;},0)}</b>
+                  <div style={{fontSize:12,color:"var(--muted)",marginTop:6,textAlign:"right"}}>
+                    In: <b style={{color:"var(--text)"}}>{Array.from({length:9},function(_,i){return parseInt(manualScores[i+9],10)||(displayHoles[i+9]?displayHoles[i+9].par:4);}).reduce(function(a,b){return a+b;},0)}</b>
                   </div>
                 </div>
               </div>
-              <button onClick={addManualPlayer} disabled={!manualName.trim()} style={ext(S.btn,{opacity:manualName.trim()?1:0.4})}>Add Player</button>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={function(){setEditingPlayerIdx(null);setShowManual(false);setManualName("");}} 
+                  style={{flex:1,padding:"14px",background:"transparent",border:"1px solid var(--border)",borderRadius:10,color:"var(--muted)",cursor:"pointer",fontSize:14}}>Cancel</button>
+                <button onClick={addManualPlayer} disabled={!manualName.trim()} style={ext(S.btn,{flex:2,opacity:manualName.trim()?1:0.4})}>{editingPlayerIdx!==null?"Update Player ✓":"Add Player"}</button>
+              </div>
             </div>
           );
         })()}
@@ -1599,42 +1631,67 @@ export default function App() {
           </div>
           <div style={{width:60}}/>
         </div>
-        <div style={{padding:"12px 8px 120px",overflowX:"auto"}}>
-          <table style={{borderCollapse:"collapse",fontSize:11,minWidth:"100%"}}>
-            <thead>
-              <tr style={{background:"var(--card)"}}>
-                <th style={ext(S.th,{textAlign:"left",padding:"6px 8px",position:"sticky",left:0,background:"var(--card)",zIndex:1,fontSize:10,color:"var(--accent)",letterSpacing:1,borderRight:"1px solid var(--border2)",borderBottom:"1px solid var(--border2)"})}>Player</th>
-                {pholes.map(function(h,i){
-                  return <th key={i} style={ext(S.th,{width:22,padding:"4px 2px",fontSize:10,color:i===8||i===17?"var(--accent)":"var(--dim)",borderRight:i===8?"2px solid var(--border2)":"1px solid var(--border)",borderBottom:"1px solid var(--border2)"})}>{i+1}</th>;
-                })}
-                <th style={ext(S.th,{width:32,color:"var(--accent)",fontSize:10,padding:"4px 3px",borderLeft:"2px solid var(--border2)",borderBottom:"1px solid var(--border2)"})}>TOT</th>
-              </tr>
-              <tr style={{background:"var(--input)"}}>
-                <th style={ext(S.th,{textAlign:"left",padding:"3px 8px",fontSize:9,color:"var(--dim)",position:"sticky",left:0,background:"var(--input)",zIndex:1,borderRight:"1px solid var(--border2)",borderBottom:"1px solid var(--border)"})}>Par</th>
-                {pholes.map(function(h,i){
-                  return <th key={i} style={ext(S.th,{padding:"2px",fontSize:9,borderRight:i===8?"2px solid var(--border2)":"1px solid var(--border)",borderBottom:"1px solid var(--border)"})}>{h.par}</th>;
-                })}
-                <th style={ext(S.th,{fontSize:9,borderLeft:"2px solid var(--border2)",borderBottom:"1px solid var(--border)"})}>72</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map(function(p,pi){
-                var tot=p.scores.reduce(function(s,v){return s+(v>0?v:0);},0);
-                return (
-                  <tr key={pi} style={{background:pi%2===0?"var(--input)":"var(--card)"}}>
-                    <td style={ext(S.td,{textAlign:"left",padding:"5px 8px",fontWeight:"700",color:CP(pi),position:"sticky",left:0,background:pi%2===0?"var(--input)":"var(--card)",zIndex:1,fontSize:12,borderRight:"1px solid var(--border2)"})}>{p.name}</td>
-                    {pholes.map(function(h,i){
-                      var g=p.scores[i];
-                      var diff=g>0?g-h.par:null;
-                      var col=diff===null?"var(--dim)":diff<0?(isLight?"#16a34a":COLORS[0]):diff===0?"var(--muted)":"var(--neg)";
-                      return <td key={i} style={ext(S.td,{padding:"3px 1px",fontSize:11,fontWeight:g>0?"600":"400",color:col,borderRight:i===8?"2px solid var(--border2)":"1px solid var(--border)",borderBottom:"1px solid var(--border)"})}>{g>0?g:"—"}</td>;
+        <div style={{padding:"12px 8px 120px"}}>
+          {[{label:"FRONT 9",start:0,end:9},{label:"BACK 9",start:9,end:18}].map(function(seg){
+            var segHoles = pholes.slice(seg.start,seg.end);
+            var segPar = segHoles.reduce(function(s,h){return s+h.par;},0);
+            return (
+              <div key={seg.label} style={{marginBottom:16,overflowX:"auto"}}>
+                <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:6,paddingLeft:4}}>{seg.label}</div>
+                <table style={{borderCollapse:"collapse",fontSize:11,minWidth:"100%"}}>
+                  <thead>
+                    <tr style={{background:"var(--card)"}}>
+                      <th style={ext(S.th,{textAlign:"left",padding:"6px 8px",position:"sticky",left:0,background:"var(--card)",zIndex:1,fontSize:10,color:"var(--accent)",letterSpacing:1,borderRight:"1px solid var(--border2)",borderBottom:"1px solid var(--border2)"})}>Player</th>
+                      {segHoles.map(function(h,i){
+                        return <th key={i} style={ext(S.th,{width:26,padding:"4px 2px",fontSize:10,color:"var(--dim)",borderRight:"1px solid var(--border)",borderBottom:"1px solid var(--border2)"})}>{seg.start+i+1}</th>;
+                      })}
+                      <th style={ext(S.th,{width:32,color:"var(--accent)",fontSize:10,padding:"4px 3px",borderLeft:"2px solid var(--border2)",borderBottom:"1px solid var(--border2)"})}>{seg.label==="FRONT 9"?"OUT":"IN"}</th>
+                    </tr>
+                    <tr style={{background:"var(--input)"}}>
+                      <th style={ext(S.th,{textAlign:"left",padding:"3px 8px",fontSize:9,color:"var(--dim)",position:"sticky",left:0,background:"var(--input)",zIndex:1,borderRight:"1px solid var(--border2)",borderBottom:"1px solid var(--border)"})}>Par</th>
+                      {segHoles.map(function(h,i){
+                        return <th key={i} style={ext(S.th,{padding:"2px",fontSize:9,borderRight:"1px solid var(--border)",borderBottom:"1px solid var(--border)"})}>{h.par}</th>;
+                      })}
+                      <th style={ext(S.th,{fontSize:9,borderLeft:"2px solid var(--border2)",borderBottom:"1px solid var(--border)"})}>{segPar}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players.map(function(p,pi){
+                      var segScores = p.scores.slice(seg.start,seg.end);
+                      var segTotal = segScores.reduce(function(s,v){return s+(v>0?v:0);},0);
+                      return (
+                        <tr key={pi} style={{background:pi%2===0?"var(--input)":"var(--card)"}}>
+                          <td style={ext(S.td,{textAlign:"left",padding:"5px 8px",fontWeight:"700",color:CP(pi),position:"sticky",left:0,background:pi%2===0?"var(--input)":"var(--card)",zIndex:1,fontSize:12,borderRight:"1px solid var(--border2)"})}>{p.name}</td>
+                          {segScores.map(function(g,i){
+                            var h = segHoles[i];
+                            var diff = g>0 ? g-h.par : null;
+                            var col = diff===null?"var(--dim)":diff<=-2?(isLight?"#1d4ed8":"#60a5fa"):diff===-1?(isLight?"#16a34a":COLORS[0]):diff===0?"var(--muted)":diff===1?"var(--neg)":"#dc2626";
+                            // Score badge
+                            var badge;
+                            if (!g||g<=0) {
+                              badge = <span style={{color:"var(--dim)"}}>—</span>;
+                            } else if (diff<=-2) {
+                              badge = <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:20,height:20,borderRadius:"50%",border:"2px solid "+col,outline:"1.5px solid "+col,outlineOffset:1,fontSize:10,fontWeight:"700",color:col}}>{g}</span>;
+                            } else if (diff===-1) {
+                              badge = <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:20,height:20,borderRadius:"50%",border:"1.5px solid "+col,fontSize:10,fontWeight:"700",color:col}}>{g}</span>;
+                            } else if (diff===1) {
+                              badge = <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:20,height:20,border:"1.5px solid "+col,fontSize:10,fontWeight:"700",color:col}}>{g}</span>;
+                            } else if (diff>=2) {
+                              badge = <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:20,height:20,border:"2px solid "+col,outline:"1.5px solid "+col,outlineOffset:1,fontSize:10,fontWeight:"700",color:col}}>{g}</span>;
+                            } else {
+                              badge = <span style={{fontSize:11,fontWeight:"600",color:col}}>{g}</span>;
+                            }
+                            return <td key={i} style={ext(S.td,{padding:"3px 1px",textAlign:"center",borderRight:"1px solid var(--border)",borderBottom:"1px solid var(--border)"})}>{badge}</td>;
+                          })}
+                          <td style={ext(S.td,{fontWeight:"700",color:CP(pi),fontSize:13,padding:"3px 6px",borderLeft:"2px solid var(--border2)"})}>{segTotal||"—"}</td>
+                        </tr>
+                      );
                     })}
-                    <td style={ext(S.td,{fontWeight:"700",color:CP(pi),fontSize:13,padding:"3px 6px",borderLeft:"2px solid var(--border2)"})}>{tot||"—"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
         </div>
         <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"12px 16px 16px",background:isLight?"linear-gradient(0deg,#fff 70%,transparent)":"linear-gradient(0deg,#0a1a0a 70%,transparent)"}}>
           <button onClick={function(){setStep("matchup");}} style={S.btn}>SET UP MATCHUPS →</button>
