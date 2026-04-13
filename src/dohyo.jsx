@@ -139,15 +139,54 @@ function computeNassau(matchup, gross, holes, inPlay) {
     }
     return { status: status, holesPlayed: hp };
   }
-  return { front: seg(0,8), back: seg(9,17), overall: seg(0,17), presses: [], holeWL: holeWL, strokeMaps: maps };
+  var front = seg(0,8), back = seg(9,17), overall = seg(0,17);
+  var presses = [];
+  var pressMode = matchup.pressMode || "off";
+  if (pressMode !== "off") {
+    var units = matchup.units || [1,1,2];
+    var perNine = units[0] > 0 || units[1] > 0;
+    var segments = perNine ? [[0,8],[9,17]] : [[0,17]];
+    for (var si2 = 0; si2 < segments.length; si2++) {
+      var startHi = segments[si2][0], endHi = segments[si2][1];
+      var pressStart = null, pressStatus = 0, runningStatus = 0;
+      var segLen = endHi - startHi + 1, holesPlayedInSeg = 0;
+      for (var hi2 = startHi; hi2 <= endHi; hi2++) {
+        if (!inPlay[hi2]) continue;
+        var g1b = parseInt(gross[hi2][p1i],10), g2b = parseInt(gross[hi2][p2i],10);
+        if (isNaN(g1b)||isNaN(g2b)||g1b<=0||g2b<=0) continue;
+        holesPlayedInSeg++;
+        runningStatus += holeWL[hi2];
+        var holesRemaining = segLen - holesPlayedInSeg;
+        var isDormie = holesRemaining > 0 && Math.abs(runningStatus) === holesRemaining;
+        if (pressStart === null) {
+          if (pressMode === "auto" && Math.abs(runningStatus) >= 2) {
+            pressStart = hi2 + 1; pressStatus = 0;
+          } else if (pressMode === "dormie" && isDormie) {
+            pressStart = hi2 + 1; pressStatus = 0;
+          }
+        } else {
+          pressStatus += holeWL[hi2];
+        }
+      }
+      if (pressStart !== null) presses.push({ startHole: pressStart + 1, status: pressStatus });
+    }
+  }
+  return { front: front, back: back, overall: overall, presses: presses, holeWL: holeWL, strokeMaps: maps };
 }
-function nassauDollars(matchup, front, back, overall) {
+function nassauDollars(matchup, front, back, overall, presses) {
   var stake = matchup.stake;
   var units = matchup.units || [1,1,2];
+  var pressMult = matchup.pressMult || 1;
+  var prs = presses || [];
+  if (matchup.type === "stroke") {
+    var net = overall.status * stake;
+    return { frontDollars:0, backDollars:0, overallDollars:net, pressDollars:0, net:net };
+  }
   var fd = (front.status===0||units[0]===0) ? 0 : front.status>0 ? stake*units[0] : -stake*units[0];
   var bd = (back.status===0||units[1]===0)  ? 0 : back.status>0  ? stake*units[1] : -stake*units[1];
   var od = (overall.status===0||units[2]===0)? 0 : overall.status>0 ? stake*units[2] : -stake*units[2];
-  return { frontDollars:fd, backDollars:bd, overallDollars:od, net:fd+bd+od };
+  var pd = prs.reduce(function(sum,p){ return sum + (p.status===0?0:p.status>0?stake*pressMult:-stake*pressMult); }, 0);
+  return { frontDollars:fd, backDollars:bd, overallDollars:od, pressDollars:pd, net:fd+bd+od+pd };
 }
 function computeGDB9(matchup, gross, holes, inPlay, startHi) {
   var p1i = matchup.p1, p2i = matchup.p2;
@@ -318,7 +357,8 @@ function RevealHoles(props) {
     p1:0, p2:1,
     strokesFront: gfn==="front" ? m.strokesFront : adjSecond,
     strokesBack:  gfn==="front" ? adjSecond : m.strokesBack,
-    stake:m.stake, units:m.units||[1,1,2], pressMode:"off"
+    stake:m.stake, units:m.units||[1,1,2],
+    pressMode:m.pressMode||"off", pressMult:m.pressMult||1, type:m.type||"nassau"
   };
   var strokeMaps = buildStrokeMaps(syn, holes);
 
@@ -346,7 +386,7 @@ function RevealHoles(props) {
   var current = holeData[holeIdx];
   var statusDisp = runningArr[playPos] || 0;
   var statusCum  = runningCum[playPos] || 0;
-  var statusAfter = isGDB ? statusDisp : statusCum;
+  var statusAfter = statusDisp; // per-nine for both GDB and Nassau
   var isFirstNineBound = playPos === 8;
   var hasStroke = current.inPlay && (current.strk.p1>0 || current.strk.p2>0);
   var fnLabel = gfn==="front" ? "Front 9" : "Back 9";
@@ -373,12 +413,14 @@ function RevealHoles(props) {
 
   useEffect(function(){
     if (!autoPlay || !waiting || done || paused || showHalftime) return;
+    // When audio is on, speech has already finished before waiting=true is set.
+    // Use a short pause for visual beat. When audio is off, use longer pause.
     var t = setTimeout(function(){
       setWaiting(false);
       setPlayPos(function(p){return p+1;});
-    }, 2500);
+    }, audioOn ? 1200 : 2500);
     return function(){ clearTimeout(t); };
-  }, [autoPlay, waiting, done, paused, showHalftime]);
+  }, [autoPlay, waiting, done, paused, showHalftime, audioOn]);
 
   useEffect(function(){
     if (!current.inPlay || !hasStroke) return;
@@ -435,6 +477,26 @@ function RevealHoles(props) {
             }
           } else {
             text += statusAfter===0 ? "Square. " : (statusAfter>0?p1.name:p2.name)+" "+Math.abs(statusAfter)+" up. ";
+            // Press status
+            var pressMode = m.pressMode||"off";
+            if (pressMode!=="off" && r.presses && r.presses.length>0) {
+              var units3 = m.units||[1,1,2];
+              var perNine3 = units3[0]>0||units3[1]>0;
+              r.presses.forEach(function(p,pi){
+                var pressStartHi = p.startHole - 1;
+                var nineEnd3 = perNine3 ? (pi===0?8:17) : 17;
+                if (d.hi+1 < p.startHole) {
+                  if (d.hi+1 === p.startHole-1) text += (pressMode==="dormie"?"Dormie press":"Press")+" in play from next hole. ";
+                  return;
+                }
+                if (perNine3 && pi===0 && d.hi>=9) return;
+                var ps=0;
+                for (var i=pressStartHi; i<=d.hi&&i<=nineEnd3; i++) ps+=r.holeWL[i]||0;
+                var pLabel = r.presses.length>1?"Press "+(pi+1)+": ":"Press: ";
+                if (ps===0) text += pLabel+"square. ";
+                else text += pLabel+(ps>0?p1.name:p2.name)+" "+Math.abs(ps)+" up. ";
+              });
+            }
           }
         } else { text += "No score. "; }
         if (isFirstNineBound) {
@@ -539,6 +601,40 @@ function RevealHoles(props) {
             {statusDisp===0 ? "ALL SQUARE" : (statusDisp>0?p1.name:p2.name)+" "+Math.abs(statusDisp)+" UP"}
           </div>
         </div>
+        {/* Press status boxes — Nassau only */}
+        {!isGDB && (m.pressMode||"off")!=="off" && (r.presses||[]).length>0 && (function(){
+          var units2 = m.units||[1,1,2];
+          var perNine2 = units2[0]>0||units2[1]>0;
+          var pressBoxes = (r.presses||[]).map(function(p,pi){
+            var pressStartHi = p.startHole - 1; // 0-indexed hole where press begins
+            var nineEnd = perNine2 ? (pi===0 ? 8 : 17) : 17;
+            var isDeclared = holeIdx+1 === p.startHole - 1; // trigger hole — press declared next
+            var isActive   = holeIdx+1 >= p.startHole;      // press is running
+            if (perNine2 && pi===0 && holeIdx >= 9) return null; // front press gone on back nine
+            if (!isDeclared && !isActive) return null; // not yet relevant
+            var ps = 0;
+            if (isActive) {
+              for (var i=pressStartHi; i<=holeIdx && i<=nineEnd; i++) ps += r.holeWL[i]||0;
+            }
+            var pCol = ps===0?(isLight?"#555":"#888"):ps>0?p1col:p2col;
+            var label = (r.presses||[]).length>1 ? "PRESS "+(pi+1) : "PRESS";
+            return (
+              <div key={pi} style={{background:isLight?"#e8f5e8":"#0d1a0d",border:"1px solid "+(isLight?"#16a34a":"#4ade80"),borderRadius:8,padding:"8px 14px",textAlign:"center",minWidth:100}}>
+                <div style={{fontSize:9,color:isLight?"#16a34a":"#4ade80",letterSpacing:2,fontWeight:"700",marginBottom:4}}>
+                  {label}{isActive?" (H"+p.startHole+"+)":""}
+                </div>
+                {isDeclared
+                  ? <div style={{fontSize:13,color:isLight?"#16a34a":"#4ade80"}}>Declared</div>
+                  : <div style={{fontSize:16,fontWeight:"700",color:pCol}}>
+                      {ps===0?"Square":(ps>0?p1.name:p2.name)+" "+Math.abs(ps)+" up"}
+                    </div>
+                }
+              </div>
+            );
+          }).filter(Boolean);
+          if (!pressBoxes.length) return null;
+          return <div style={{display:"flex",gap:10,marginTop:4,marginBottom:8,flexWrap:"wrap",justifyContent:"center"}}>{pressBoxes}</div>;
+        })()}
         {isGDB && (function(){
           var gdbSeg = holeIdx<9 ? r.front : r.back;
           if (!gdbSeg) return null;
@@ -928,13 +1024,21 @@ function generateDohyoReport({ players, matchups, results, refCourseName, global
     var p1col=PCOLS[m.p1%8], p2col=PCOLS[m.p2%8];
     var borderCol=net>0?p1col:net<0?p2col:"#e5e7eb";
     var rows="";
-    if(!isGDB){
+    if(!isGDB && m.type!=="stroke"){
       var u=m.units||[1,1,2];
       var f9s=globalFirstNine==="front"?(r.front&&r.front.status):(r.back&&r.back.status);
       var s9s=globalFirstNine==="front"?(r.back&&r.back.status):(r.front&&r.front.status);
       if(u[0]>0) rows+='<tr><td style="padding:6px 0;color:#6b7280">First 9 ×'+u[0]+'</td><td style="padding:6px 0;color:#6b7280">'+fmtSt(f9s,r.p1name,r.p2name)+'</td><td style="padding:6px 0;text-align:right;font-weight:700">'+fmtDol(r.dollars.frontDollars)+'</td></tr>';
       if(u[1]>0) rows+='<tr><td style="padding:6px 0;color:#6b7280">Second 9 ×'+u[1]+'</td><td style="padding:6px 0;color:#6b7280">'+fmtSt(s9s,r.p1name,r.p2name)+'</td><td style="padding:6px 0;text-align:right;font-weight:700">'+fmtDol(r.dollars.backDollars)+'</td></tr>';
       if(u[2]>0) rows+='<tr><td style="padding:6px 0;color:#6b7280">Overall ×'+u[2]+'</td><td style="padding:6px 0;color:#6b7280">'+fmtSt(r.overall&&r.overall.status,r.p1name,r.p2name)+'</td><td style="padding:6px 0;text-align:right;font-weight:700">'+fmtDol(r.dollars.overallDollars)+'</td></tr>';
+      var pm=m.pressMult||1;
+      (r.presses||[]).forEach(function(p,pi){
+        var pd=p.status===0?0:p.status>0?m.stake*pm:-m.stake*pm;
+        rows+='<tr><td style="padding:6px 0;color:#6b7280">Press '+(pi+1)+' (from H'+p.startHole+')</td><td style="padding:6px 0;color:#6b7280">'+fmtSt(p.status,r.p1name,r.p2name)+'</td><td style="padding:6px 0;text-align:right;font-weight:700">'+fmtDol(pd)+'</td></tr>';
+      });
+    } else if(m.type==="stroke"){
+      var s=r.overall&&r.overall.status||0;
+      rows+='<tr><td style="padding:6px 0;color:#6b7280">Net holes × $'+m.stake+'/hole</td><td style="padding:6px 0;color:#6b7280">'+fmtSt(s,r.p1name,r.p2name)+'</td><td style="padding:6px 0;text-align:right;font-weight:700">'+fmtDol(net)+'</td></tr>';
     } else {
       [["FIRST 9",globalFirstNine==="front"?r.front:r.back,globalFirstNine==="front"?r.dollars.front:r.dollars.back],
        ["SECOND 9",globalFirstNine==="front"?r.back:r.front,globalFirstNine==="front"?r.dollars.back:r.dollars.front]].forEach(function(row){
@@ -947,7 +1051,7 @@ function generateDohyoReport({ players, matchups, results, refCourseName, global
       });
     }
     return '<div style="border:2px solid '+borderCol+';border-radius:10px;padding:16px;margin-bottom:16px">'
-      +'<div style="font-size:11px;color:#16a34a;letter-spacing:2px;font-weight:700;margin-bottom:6px">MATCH '+(mi+1)+' · '+(isGDB?"GDB":"NASSAU")+'</div>'
+      +'<div style="font-size:11px;color:#16a34a;letter-spacing:2px;font-weight:700;margin-bottom:6px">MATCH '+(mi+1)+' · '+(isGDB?"GDB":m.type==="stroke"?"MATCH PLAY":"NASSAU")+'</div>'
       +(function(){
         var sf2 = globalFirstNine==="front" ? m.strokesFront : m.strokesBack;
         var sb2 = globalFirstNine==="front" ? (r.adjSecond!=null?r.adjSecond:m.strokesBack) : (r.adjSecond!=null?r.adjSecond:m.strokesFront);
@@ -1154,7 +1258,7 @@ export default function App() {
   var rh = useState(null); var refHoles=rh[0], setRefHoles=rh[1];
   var rc = useState(null); var refCourseName=rc[0], setRefCourseName=rc[1];
   var gf = useState("front"); var globalFirstNine=gf[0], setGlobalFirstNine=gf[1];
-  var mu = useState([{p1:0,p2:1,type:"nassau",strokesFront:0,strokesBack:0,autoAdjust:true,stake:5,units:[1,1,2]}]);
+  var mu = useState([{p1:0,p2:1,type:"nassau",strokesFront:0,strokesBack:0,autoAdjust:true,stake:5,units:[1,1,2],pressMode:"off",pressMult:1}]);
   var matchups=mu[0], setMatchups=mu[1];
   var rs = useState(null); var results=rs[0], setResults=rs[1];
   var ht = useState(null); var halftimeResults=ht[0], setHalftimeResults=ht[1];
@@ -1398,7 +1502,7 @@ export default function App() {
       var gross18=holes.map(function(_,hi){var r=Array(4).fill("0");r[0]=String(p1.scores[hi]||0);r[1]=String(p2.scores[hi]||0);return r;});
       var inPlay=holes.map(function(_,hi){return p1.scores[hi]>0&&p2.scores[hi]>0;});
       var adj=adjArr&&adjArr[mi]!=null?adjArr[mi]:(globalFirstNine==="front"?m.strokesBack:m.strokesFront);
-      var syn={p1:0,p2:1,strokesFront:globalFirstNine==="front"?m.strokesFront:adj,strokesBack:globalFirstNine==="front"?adj:m.strokesBack,stake:m.stake,units:m.units||[1,1,2],pressMode:"off"};
+      var syn={p1:0,p2:1,strokesFront:globalFirstNine==="front"?m.strokesFront:adj,strokesBack:globalFirstNine==="front"?adj:m.strokesBack,stake:m.stake,units:m.units||[1,1,2],pressMode:m.pressMode||"off",pressMult:m.pressMult||1,type:m.type||"nassau"};
       if(m.type==="gdb"){
         var result=computeGDB(syn,gross18,holes,inPlay);
         var dol=gdbDollars(syn,result.front,result.back);
@@ -1407,8 +1511,8 @@ export default function App() {
         var result=computeNassau(syn,gross18,holes,inPlay);
         var f9=globalFirstNine==="front"?result.front:result.back;
         var s9=globalFirstNine==="front"?result.back:result.front;
-        var dol=nassauDollars(syn,f9,s9,result.overall);
-        return Object.assign({},result,{dollars:dol,type:"nassau",p1name:p1.name,p2name:p2.name,adjSecond:adj});
+        var dol=nassauDollars(syn,f9,s9,result.overall,result.presses);
+        return Object.assign({},result,{dollars:dol,type:m.type||"nassau",p1name:p1.name,p2name:p2.name,adjSecond:adj});
       }
     });
     setResults(res);
@@ -1509,7 +1613,7 @@ export default function App() {
             <button onClick={function(){
               if (window.confirm("Restart? All loaded players will be cleared.")) {
                 setPlayers([]); setRefHoles(null); setRefCourseName(null);
-                setMatchups([{p1:0,p2:1,type:"nassau",strokesFront:0,strokesBack:0,autoAdjust:true,stake:5,units:[1,1,2]}]);
+                setMatchups([{p1:0,p2:1,type:"nassau",strokesFront:0,strokesBack:0,autoAdjust:true,stake:5,units:[1,1,2],pressMode:"off",pressMult:1}]);
                 setResults(null); setHalftimeResults(null);
                 setScanError(null); setShowPaste(false); setPasteText("");
                 try { localStorage.removeItem("dohyo_session"); } catch(_) {}
@@ -1805,7 +1909,7 @@ export default function App() {
                   style={{background:"transparent",border:"1px solid var(--neg)",borderRadius:6,color:"var(--neg)",cursor:"pointer",fontSize:11,padding:"3px 8px"}}>Remove</button>}
               </div>
               <div style={{display:"flex",gap:6,marginBottom:10}}>
-                {[["nassau","Nassau"],["gdb","GDB"]].map(function(item){
+                {[["nassau","Nassau"],["gdb","GDB"],["stroke","Match Play"]].map(function(item){
                   return <button key={item[0]} onClick={function(){upd("type",item[0]);}}
                     style={{flex:1,padding:"8px 0",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:"700",
                       border:"1px solid "+(m.type===item[0]?"var(--accent)":"var(--border)"),
@@ -1851,8 +1955,11 @@ export default function App() {
                   <div style={{width:16,height:16,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:m.autoAdjust?20:3}}/>
                 </div>
               </div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:m.type==="nassau"?8:0}}>
-                <span style={{fontSize:13,color:"var(--muted)"}}>Stake</span>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                <div>
+                  <span style={{fontSize:13,color:"var(--muted)"}}>Stake</span>
+                  <div style={{fontSize:10,color:"var(--dim)"}}>{m.type==="nassau"?`F:B:18 = ${(m.units||[1,1,2]).join(":")}`:m.type==="gdb"?`Game 3× · Dormie 1× · Bye 1×`:`Net holes × stake/hole`}</div>
+                </div>
                 <div style={{display:"flex",alignItems:"center",background:"var(--input)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden"}}>
                   <button onClick={function(){upd("stake",Math.max(1,m.stake-1));}} style={S.pm}>−</button>
                   <span style={{width:42,textAlign:"center",color:"var(--accent)",fontSize:16,fontWeight:"700"}}>${m.stake}</span>
@@ -1860,7 +1967,7 @@ export default function App() {
                 </div>
               </div>
               {m.type==="nassau" && (
-                <div style={{marginTop:8}}>
+                <div style={{marginTop:8,marginBottom:8}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                     <span style={{fontSize:13,color:"var(--muted)"}}>Units ratio</span>
                     <span style={{fontSize:11,color:"var(--dim)"}}>{(m.units||[1,1,2]).join(" : ")} · max ${(m.units||[1,1,2]).reduce(function(s,u){return s+u;},0)*m.stake}</span>
@@ -1881,11 +1988,37 @@ export default function App() {
                   </div>
                 </div>
               )}
-              {m.type==="gdb" && <div style={{background:"var(--input)",borderRadius:8,padding:"6px 10px",fontSize:12,color:"var(--dim)",marginTop:8}}>Game ${m.stake*3} · Dormie ${m.stake} · Bye ${m.stake} · max ${m.stake*5}/nine</div>}
+              {m.type==="gdb" && <div style={{background:"var(--input)",borderRadius:8,padding:"6px 10px",fontSize:12,color:"var(--dim)",marginTop:0,marginBottom:8}}>Game ${m.stake*3} · Dormie ${m.stake} · Bye ${m.stake} · max ${m.stake*5}/nine</div>}
+              {/* Press — Nassau only */}
+              {m.type==="nassau" && (<>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                  <span style={{fontSize:13,color:"var(--muted)"}}>Auto Press</span>
+                  <div style={{display:"flex",gap:6}}>
+                    {[["off","Off"],["auto","2-Down"],["dormie","Dormie"]].map(function(item){
+                      var val=item[0],lbl=item[1];
+                      return <button key={val} onClick={function(){upd("pressMode",val);}}
+                        style={{padding:"6px 10px",borderRadius:6,fontSize:12,cursor:"pointer",
+                          border:"1px solid "+((m.pressMode||"off")===val?"var(--accent)":"var(--border)"),
+                          background:(m.pressMode||"off")===val?"var(--accent)":"transparent",
+                          color:(m.pressMode||"off")===val?"#000":"var(--muted)"}}>{lbl}</button>;
+                    })}
+                  </div>
+                </div>
+                {(m.pressMode||"off")!=="off" && (
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <span style={{fontSize:13,color:"var(--dim)"}}>Press stake</span>
+                    <div style={{display:"flex",alignItems:"center",background:"var(--input)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden"}}>
+                      <button onClick={function(){upd("pressMult",Math.max(1,(m.pressMult||1)-1));}} style={S.pm}>−</button>
+                      <span style={{width:38,textAlign:"center",color:"var(--accent)",fontSize:16,fontWeight:"700"}}>×{m.pressMult||1}</span>
+                      <button onClick={function(){upd("pressMult",(m.pressMult||1)+1);}} style={S.pm}>+</button>
+                    </div>
+                  </div>
+                )}
+              </>)}
             </div>
           );
         })}
-        <button onClick={function(){setMatchups(function(prev){return prev.concat([{p1:0,p2:1,type:"nassau",strokesFront:0,strokesBack:0,autoAdjust:true,stake:5,units:[1,1,2]}]);});}}
+        <button onClick={function(){setMatchups(function(prev){return prev.concat([{p1:0,p2:1,type:"nassau",strokesFront:0,strokesBack:0,autoAdjust:true,stake:5,units:[1,1,2],pressMode:"off",pressMult:1}]);});}}
           style={ext(S.cBtn,{width:"100%",textAlign:"center",marginBottom:8})}>+ Add Matchup ({matchups.length} total)</button>
       </div>
       <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"12px 16px 16px",background:isLight?"linear-gradient(0deg,#fff 70%,transparent)":"linear-gradient(0deg,#0a1a0a 70%,transparent)"}}>
@@ -2002,13 +2135,13 @@ export default function App() {
         </div>
         <div style={{maxWidth:480,margin:"0 auto",padding:"16px 16px 40px"}}>
           <div style={{background:"var(--card)",border:"2px solid "+(srnet>0?srp1col:srnet<0?srp2col:"var(--border)"),borderRadius:10,padding:14,marginBottom:14}}>
-            <div style={{fontSize:11,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:6}}>MATCH {slowIdx+1} · {srIsGDB?"GDB":"NASSAU"}</div>
+            <div style={{fontSize:11,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:6}}>MATCH {slowIdx+1} · {srIsGDB?"GDB":sr.type==="stroke"?"MATCH PLAY":"NASSAU"}</div>
             <div style={{fontSize:18,fontWeight:"800",marginBottom:6}}>
               <span style={{color:srp1col}}>{sr.p1name}</span>
               {" "}<span style={{color:"var(--dim)",fontSize:13}}>vs</span>{" "}
               <span style={{color:srp2col}}>{sr.p2name}</span>
             </div>
-            {!srIsGDB && (function(){
+            {!srIsGDB && sr.type!=="stroke" && (function(){
               var u=sm2.units||[1,1,2];
               var f9s=globalFirstNine==="front"?(sr.front&&sr.front.status):(sr.back&&sr.back.status);
               var s9s=globalFirstNine==="front"?(sr.back&&sr.back.status):(sr.front&&sr.front.status);
@@ -2024,11 +2157,31 @@ export default function App() {
                   </div>
                 );
               }
+              var pm = sm2.pressMult||1;
               return (
                 <div style={{marginBottom:10}}>
                   {u[0]>0 && row("First 9 ×"+u[0], sr.dollars.frontDollars, f9s)}
                   {u[1]>0 && row("Second 9 ×"+u[1], sr.dollars.backDollars, s9s)}
                   {u[2]>0 && row("Overall ×"+u[2], sr.dollars.overallDollars, sr.overall&&sr.overall.status)}
+                  {(sr.presses||[]).map(function(p,pi){
+                    var pd = p.status===0?0:p.status>0?sm2.stake*pm:-sm2.stake*pm;
+                    return row("Press "+(pi+1)+" (from H"+p.startHole+")", pd, p.status);
+                  })}
+                </div>
+              );
+            })()}
+            {/* Match Play rows */}
+            {!srIsGDB && sr.type==="stroke" && (function(){
+              var s = sr.overall&&sr.overall.status||0;
+              return (
+                <div style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:12,color:"var(--muted)"}}>Net holes × ${sm2.stake}/hole</div>
+                      <div style={{fontSize:14,color:s>0?srp1col:s<0?srp2col:"var(--dim)",fontWeight:"700"}}>{s===0?"All Square":(s>0?sr.p1name:sr.p2name)+" +"+Math.abs(s)+" holes"}</div>
+                    </div>
+                    <span style={{fontSize:16,color:srnet>0?srp1col:srnet<0?srp2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{srnet===0?"—":srnet>0?"+$"+srnet:"-$"+Math.abs(srnet)}</span>
+                  </div>
                 </div>
               );
             })()}
@@ -2110,13 +2263,13 @@ export default function App() {
           var isGDB=r.type==="gdb";
           return (
             <div key={mi} style={{background:"var(--card)",border:"2px solid "+(net>0?p1col:net<0?p2col:"var(--border)"),borderRadius:10,padding:14,marginBottom:14}}>
-              <div style={{fontSize:11,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:6}}>MATCH {mi+1} · {isGDB?"GDB":"NASSAU"}</div>
+              <div style={{fontSize:11,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:6}}>MATCH {mi+1} · {isGDB?"GDB":r.type==="stroke"?"MATCH PLAY":"NASSAU"}</div>
               <div style={{fontSize:18,fontWeight:"800",marginBottom:6}}>
                 <span style={{color:p1col}}>{r.p1name}</span>
                 {" "}<span style={{color:"var(--dim)",fontSize:13}}>vs</span>{" "}
                 <span style={{color:p2col}}>{r.p2name}</span>
               </div>
-              {!isGDB && (function(){
+              {!isGDB && r.type!=="stroke" && (function(){
                 var u=m.units||[1,1,2];
                 var f9s=globalFirstNine==="front"?(r.front&&r.front.status):(r.back&&r.back.status);
                 var s9s=globalFirstNine==="front"?(r.back&&r.back.status):(r.front&&r.front.status);
@@ -2132,11 +2285,31 @@ export default function App() {
                     </div>
                   );
                 }
+                var pm = m.pressMult||1;
                 return (
                   <div style={{marginBottom:10}}>
                     {u[0]>0 && row("First 9 ×"+u[0], r.dollars.frontDollars, f9s)}
                     {u[1]>0 && row("Second 9 ×"+u[1], r.dollars.backDollars, s9s)}
                     {u[2]>0 && row("Overall ×"+u[2], r.dollars.overallDollars, r.overall&&r.overall.status)}
+                    {(r.presses||[]).map(function(p,pi){
+                      var pd = p.status===0?0:p.status>0?m.stake*pm:-m.stake*pm;
+                      return row("Press "+(pi+1)+" (from H"+p.startHole+")", pd, p.status);
+                    })}
+                  </div>
+                );
+              })()}
+              {/* Match Play rows */}
+              {!isGDB && r.type==="stroke" && (function(){
+                var s = r.overall&&r.overall.status||0;
+                return (
+                  <div style={{marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:12,color:"var(--muted)"}}>Net holes × ${m.stake}/hole</div>
+                        <div style={{fontSize:14,color:s>0?p1col:s<0?p2col:"var(--dim)",fontWeight:"700"}}>{s===0?"All Square":(s>0?r.p1name:r.p2name)+" +"+Math.abs(s)+" holes"}</div>
+                      </div>
+                      <span style={{fontSize:16,color:net>0?p1col:net<0?p2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{net===0?"—":net>0?"+$"+net:"-$"+Math.abs(net)}</span>
+                    </div>
                   </div>
                 );
               })()}
