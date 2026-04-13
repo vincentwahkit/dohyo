@@ -1475,14 +1475,26 @@ export default function App() {
         </div>
       )}
       <div style={{background:"var(--card)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid var(--border)"}}>
-        <div style={{width:60}}/>
+        <div style={{width:60}}>
+          {players.length > 0 && (
+            <button onClick={function(){
+              if (window.confirm("Reset session? All loaded players will be cleared.")) {
+                setPlayers([]); setRefHoles(null); setRefCourseName(null);
+                setMatchups([]); setResults([]); setHalftimeResults([]);
+                setScanError(null); setShowPaste(false); setPasteText("");
+                try { localStorage.removeItem("dohyo_session"); } catch(_) {}
+              }
+            }} style={{background:"transparent",border:"1px solid var(--neg)",borderRadius:6,color:"var(--neg)",cursor:"pointer",fontSize:11,padding:"4px 8px"}}>
+              Reset
+            </button>
+          )}
+        </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <DohyoLogo size={36}/>
           <div>
             <div style={{fontSize:18,fontWeight:"800",letterSpacing:3,color:"var(--text)",lineHeight:1,fontFamily:"'DM Sans', sans-serif"}}>dohyo</div>
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1,lineHeight:1.5}}>Step into the ring.<br/>The honors are yours alone.</div>
-            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v0.1.0 · 2026-04-12 05:45</div>
-            <div style={{fontSize:8,color:"var(--dim)",letterSpacing:1,opacity:0.5}}>build {BUILD}</div>
+            <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v1.0.0</div>
           </div>
         </div>
         <button onClick={function(){setIsLight(function(v){return !v;});}} style={{background:"transparent",border:"none",color:"var(--dim)",cursor:"pointer",fontSize:18,width:60}}>{isLight?"🌙":"☀️"}</button>
