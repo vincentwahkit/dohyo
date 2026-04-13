@@ -1994,12 +1994,12 @@ export default function App() {
               function fmtS(s){return s===0?"AS":(s>0?sr.p1name:sr.p2name)+" "+Math.abs(s)+" UP";}
               function row(label,dol,status){
                 return (
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                    <div>
-                      <span style={{fontSize:15,color:"var(--muted)"}}>{label}</span>
-                      <span style={{fontSize:15,color:status>0?srp1col:status<0?srp2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtS(status)}</span>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:12,color:"var(--muted)"}}>{label}</div>
+                      <div style={{fontSize:14,color:status>0?srp1col:status<0?srp2col:"var(--dim)",fontWeight:"700"}}>{fmtS(status)}</div>
                     </div>
-                    <span style={{fontSize:16,color:dol>0?srp1col:dol<0?srp2col:"var(--dim)",fontWeight:"700"}}>{dol===0?"—":dol>0?"+$"+dol:"-$"+Math.abs(dol)}</span>
+                    <span style={{fontSize:16,color:dol>0?srp1col:dol<0?srp2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{dol===0?"—":dol>0?"+$"+dol:"-$"+Math.abs(dol)}</span>
                   </div>
                 );
               }
@@ -2024,17 +2024,26 @@ export default function App() {
               return (
                 <div key={label} style={{marginBottom:8}}>
                   <div style={{fontSize:10,color:"var(--accent)",letterSpacing:1,fontWeight:"700",marginBottom:4}}>{label}</div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                    <div><span style={{fontSize:15,color:"var(--dim)"}}>Game ×3</span><span style={{fontSize:15,color:gStatus>0?srp1col:gStatus<0?srp2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(gStatus)}</span></div>
-                    <span style={{fontSize:16,color:dol9.gameDollars>0?srp1col:dol9.gameDollars<0?srp2col:"var(--dim)",fontWeight:"700"}}>{dol9.gameDollars===0?"—":dol9.gameDollars>0?"+$"+dol9.gameDollars:"-$"+Math.abs(dol9.gameDollars)}</span>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:12,color:"var(--dim)"}}>{fmtSt(gStatus)}</div>
+                      <div style={{fontSize:12,color:"var(--muted)"}}>Game ×3</div>
+                    </div>
+                    <span style={{fontSize:16,color:dol9.gameDollars>0?srp1col:dol9.gameDollars<0?srp2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{dol9.gameDollars===0?"—":dol9.gameDollars>0?"+$"+dol9.gameDollars:"-$"+Math.abs(dol9.gameDollars)}</span>
                   </div>
-                  {seg9.dormie && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                    <div><span style={{fontSize:15,color:"var(--dim)"}}>Dormie ×1</span><span style={{fontSize:15,color:dStatus>0?srp1col:dStatus<0?srp2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(dStatus)}</span></div>
-                    <span style={{fontSize:16,color:dol9.dormieDollars>0?srp1col:dol9.dormieDollars<0?srp2col:"var(--dim)",fontWeight:"700"}}>{dol9.dormieDollars===0?"—":dol9.dormieDollars>0?"+$"+dol9.dormieDollars:"-$"+Math.abs(dol9.dormieDollars)}</span>
+                  {seg9.dormie && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:12,color:"var(--dim)"}}>{fmtSt(dStatus)}</div>
+                      <div style={{fontSize:12,color:"var(--muted)"}}>Dormie ×1</div>
+                    </div>
+                    <span style={{fontSize:16,color:dol9.dormieDollars>0?srp1col:dol9.dormieDollars<0?srp2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{dol9.dormieDollars===0?"—":dol9.dormieDollars>0?"+$"+dol9.dormieDollars:"-$"+Math.abs(dol9.dormieDollars)}</span>
                   </div>}
-                  {seg9.buy && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                    <div><span style={{fontSize:15,color:"var(--dim)"}}>Bye ×1</span><span style={{fontSize:15,color:bStatus>0?srp1col:bStatus<0?srp2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(bStatus)}</span></div>
-                    <span style={{fontSize:16,color:dol9.buyDollars>0?srp1col:dol9.buyDollars<0?srp2col:"var(--dim)",fontWeight:"700"}}>{dol9.buyDollars===0?"—":dol9.buyDollars>0?"+$"+dol9.buyDollars:"-$"+Math.abs(dol9.buyDollars)}</span>
+                  {seg9.buy && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:12,color:"var(--dim)"}}>{fmtSt(bStatus)}</div>
+                      <div style={{fontSize:12,color:"var(--muted)"}}>Bye ×1</div>
+                    </div>
+                    <span style={{fontSize:16,color:dol9.buyDollars>0?srp1col:dol9.buyDollars<0?srp2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{dol9.buyDollars===0?"—":dol9.buyDollars>0?"+$"+dol9.buyDollars:"-$"+Math.abs(dol9.buyDollars)}</span>
                   </div>}
                 </div>
               );
@@ -2093,12 +2102,12 @@ export default function App() {
                 function fmtS(s){return s===0?"AS":(s>0?r.p1name:r.p2name)+" "+Math.abs(s)+" UP";}
                 function row(label,dol,status){
                   return (
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                      <div>
-                        <span style={{fontSize:15,color:"var(--muted)"}}>{label}</span>
-                        <span style={{fontSize:15,color:status>0?p1col:status<0?p2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtS(status)}</span>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:12,color:"var(--muted)"}}>{label}</div>
+                        <div style={{fontSize:14,color:status>0?p1col:status<0?p2col:"var(--dim)",fontWeight:"700"}}>{fmtS(status)}</div>
                       </div>
-                      <span style={{fontSize:16,color:dol>0?p1col:dol<0?p2col:"var(--dim)",fontWeight:"700"}}>{dol===0?"—":dol>0?"+$"+dol:"-$"+Math.abs(dol)}</span>
+                      <span style={{fontSize:16,color:dol>0?p1col:dol<0?p2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{dol===0?"—":dol>0?"+$"+dol:"-$"+Math.abs(dol)}</span>
                     </div>
                   );
                 }
@@ -2123,17 +2132,26 @@ export default function App() {
                 return (
                   <div key={label} style={{marginBottom:8}}>
                     <div style={{fontSize:10,color:"var(--accent)",letterSpacing:1,fontWeight:"700",marginBottom:4}}>{label}</div>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                      <div><span style={{fontSize:15,color:"var(--dim)"}}>Game ×3</span><span style={{fontSize:15,color:gStatus>0?p1col:gStatus<0?p2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(gStatus)}</span></div>
-                      <span style={{fontSize:16,color:dol9.gameDollars>0?p1col:dol9.gameDollars<0?p2col:"var(--dim)",fontWeight:"700"}}>{dol9.gameDollars===0?"—":dol9.gameDollars>0?"+$"+dol9.gameDollars:"-$"+Math.abs(dol9.gameDollars)}</span>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:12,color:"var(--muted)"}}>Game ×3</div>
+                        <div style={{fontSize:14,color:gStatus>0?p1col:gStatus<0?p2col:"var(--dim)",fontWeight:"700"}}>{fmtSt(gStatus)}</div>
+                      </div>
+                      <span style={{fontSize:16,color:dol9.gameDollars>0?p1col:dol9.gameDollars<0?p2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{dol9.gameDollars===0?"—":dol9.gameDollars>0?"+$"+dol9.gameDollars:"-$"+Math.abs(dol9.gameDollars)}</span>
                     </div>
-                    {seg9.dormie && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                      <div><span style={{fontSize:15,color:"var(--dim)"}}>Dormie ×1</span><span style={{fontSize:15,color:dStatus>0?p1col:dStatus<0?p2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(dStatus)}</span></div>
-                      <span style={{fontSize:16,color:dol9.dormieDollars>0?p1col:dol9.dormieDollars<0?p2col:"var(--dim)",fontWeight:"700"}}>{dol9.dormieDollars===0?"—":dol9.dormieDollars>0?"+$"+dol9.dormieDollars:"-$"+Math.abs(dol9.dormieDollars)}</span>
+                    {seg9.dormie && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:12,color:"var(--muted)"}}>Dormie ×1</div>
+                        <div style={{fontSize:14,color:dStatus>0?p1col:dStatus<0?p2col:"var(--dim)",fontWeight:"700"}}>{fmtSt(dStatus)}</div>
+                      </div>
+                      <span style={{fontSize:16,color:dol9.dormieDollars>0?p1col:dol9.dormieDollars<0?p2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{dol9.dormieDollars===0?"—":dol9.dormieDollars>0?"+$"+dol9.dormieDollars:"-$"+Math.abs(dol9.dormieDollars)}</span>
                     </div>}
-                    {seg9.buy && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                      <div><span style={{fontSize:15,color:"var(--dim)"}}>Bye ×1</span><span style={{fontSize:15,color:bStatus>0?p1col:bStatus<0?p2col:"var(--dim)",fontWeight:"700",marginLeft:8}}>{fmtSt(bStatus)}</span></div>
-                      <span style={{fontSize:16,color:dol9.buyDollars>0?p1col:dol9.buyDollars<0?p2col:"var(--dim)",fontWeight:"700"}}>{dol9.buyDollars===0?"—":dol9.buyDollars>0?"+$"+dol9.buyDollars:"-$"+Math.abs(dol9.buyDollars)}</span>
+                    {seg9.buy && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)",gap:8}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:12,color:"var(--muted)"}}>Bye ×1</div>
+                        <div style={{fontSize:14,color:bStatus>0?p1col:bStatus<0?p2col:"var(--dim)",fontWeight:"700"}}>{fmtSt(bStatus)}</div>
+                      </div>
+                      <span style={{fontSize:16,color:dol9.buyDollars>0?p1col:dol9.buyDollars<0?p2col:"var(--dim)",fontWeight:"700",flexShrink:0}}>{dol9.buyDollars===0?"—":dol9.buyDollars>0?"+$"+dol9.buyDollars:"-$"+Math.abs(dol9.buyDollars)}</span>
                     </div>}
                   </div>
                 );
