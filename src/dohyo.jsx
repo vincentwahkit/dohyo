@@ -441,11 +441,10 @@ function RevealHoles(props) {
     function delay(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
     (async function(){
       try {
-        var d = current; var text = "";
+        var d = current; var text = "Hole " + (d.hi+1) + ". ";
         if (d.inPlay && hasStroke) {
-          if (audioOn) await speak("Hole " + (d.hi+1) + ". ");
-          if (cancelled) return; await delay(600); if (cancelled) return;
-        } else { text = "Hole " + (d.hi+1) + ". "; }
+          if (cancelled) return; await delay(300); if (cancelled) return;
+        }
         if (d.inPlay) {
           var s1 = d.strk.p1>0 ? p1.name+" nett "+d.n1 : p1.name+" "+d.g1;
           var s2 = d.strk.p2>0 ? p2.name+" nett "+d.n2 : p2.name+" "+d.g2;
