@@ -1475,20 +1475,6 @@ export default function App() {
         </div>
       )}
       <div style={{background:"var(--card)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid var(--border)"}}>
-        <div style={{width:60}}>
-          {players.length > 0 && (
-            <button onClick={function(){
-              if (window.confirm("Reset session? All loaded players will be cleared.")) {
-                setPlayers([]); setRefHoles(null); setRefCourseName(null);
-                setMatchups([]); setResults([]); setHalftimeResults([]);
-                setScanError(null); setShowPaste(false); setPasteText("");
-                try { localStorage.removeItem("dohyo_session"); } catch(_) {}
-              }
-            }} style={{background:"transparent",border:"1px solid var(--neg)",borderRadius:6,color:"var(--neg)",cursor:"pointer",fontSize:11,padding:"4px 8px"}}>
-              Reset
-            </button>
-          )}
-        </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <DohyoLogo size={36}/>
           <div>
@@ -1497,7 +1483,22 @@ export default function App() {
             <div style={{fontSize:9,color:"var(--dim)",letterSpacing:1}}>v1.0.0</div>
           </div>
         </div>
-        <button onClick={function(){setIsLight(function(v){return !v;});}} style={{background:"transparent",border:"none",color:"var(--dim)",cursor:"pointer",fontSize:18,width:60}}>{isLight?"🌙":"☀️"}</button>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {players.length > 0 && (
+            <button onClick={function(){
+              if (window.confirm("Restart? All loaded players will be cleared.")) {
+                setPlayers([]); setRefHoles(null); setRefCourseName(null);
+                setMatchups([{p1:0,p2:1,type:"nassau",strokesFront:0,strokesBack:0,autoAdjust:true,stake:5,units:[1,1,2]}]);
+                setResults(null); setHalftimeResults(null);
+                setScanError(null); setShowPaste(false); setPasteText("");
+                try { localStorage.removeItem("dohyo_session"); } catch(_) {}
+              }
+            }} style={{background:"transparent",border:"1px solid var(--neg)",borderRadius:6,color:"var(--neg)",cursor:"pointer",fontSize:11,padding:"4px 8px"}}>
+              Restart
+            </button>
+          )}
+          <button onClick={function(){setIsLight(function(v){return !v;});}} style={{background:"transparent",border:"none",color:"var(--dim)",cursor:"pointer",fontSize:18}}>{isLight?"🌙":"☀️"}</button>
+        </div>
       </div>
       <div style={{maxWidth:480,margin:"0 auto",padding:"16px 16px 120px"}}>
         {hasSession && (function(){
@@ -1560,7 +1561,7 @@ export default function App() {
             <div style={{fontSize:10,color:"var(--accent)",letterSpacing:2,fontWeight:"700",marginBottom:8}}>PASTE PAYLOAD</div>
             <textarea value={pasteText} onChange={function(e){setPasteText(e.target.value);}}
               placeholder="Paste payload from Tee Box here..."
-              style={{width:"100%",boxSizing:"border-box",background:"var(--input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text)",padding:"10px 12px",fontSize:13,fontFamily:"monospace",resize:"vertical",minHeight:80,outline:"none",marginBottom:10}}/>
+              style={{width:"100%",boxSizing:"border-box",background:"var(--input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text)",padding:"10px 12px",fontSize:16,fontFamily:"monospace",resize:"vertical",minHeight:80,outline:"none",marginBottom:10}}/>
             <div style={{display:"flex",gap:8}}>
               <button onClick={function(){setShowPaste(false);setPasteText("");}}
                 style={{flex:1,padding:"12px",background:"transparent",border:"1px solid var(--border)",borderRadius:10,color:"var(--muted)",cursor:"pointer",fontSize:14}}>Cancel</button>
