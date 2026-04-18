@@ -44,7 +44,7 @@ const PRESET_COURSES = [
     {par:5,si:11},{par:4,si:7},{par:3,si:17},{par:4,si:5},
     {par:4,si:1},{par:4,si:3},{par:3,si:15},{par:4,si:9},
     {par:5,si:13},{par:4,si:4},{par:5,si:2},{par:3,si:12},
-    {par:4,si:8},{par:4,si:18},{par:4,si:14},{par:4,si:6},
+    {par:4,si:8},{par:4,si:18},{par:3,si:14},{par:4,si:6},
     {par:3,si:16},{par:6,si:10},
   ]},
   { id:"seletar", name:"Seletar CC", tee:"Blue", holes:[
